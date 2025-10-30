@@ -65,7 +65,9 @@ jobs:
           pip install -r app/requirements.txt pytest
 
       - name: Run unit tests
-        run: pytest --maxfail=1 --disable-warnings -q
+        run:  |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          pytest --maxfail=1 --disable-warnings -q
 
   build_and_push:
     runs-on: ubuntu-latest
