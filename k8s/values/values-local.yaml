@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/surabhisahay03/cloudguard-sentinel
-  tag: 1.0.7
+  tag: latest
   pullPolicy: Always
 
 service:

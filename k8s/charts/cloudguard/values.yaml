@@ -12,3 +12,10 @@ ingress:
   enabled: true
   class: nginx
   host: cloudguard.local
+
+# Horizontal Pod Autoscaler
+hpa:
+  enabled: false  # <-- Disabled by default
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 50
