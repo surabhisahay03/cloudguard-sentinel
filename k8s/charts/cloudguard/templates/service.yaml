@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cloudguard.fullname" . }}
+  labels:
+    {{- include "cloudguard.labels" . | nindent 4 }}
+  annotations:
+    # 1. Tells Prometheus "YES, scrape me!"
+    prometheus.io/scrape: "true"
+    # 2. Tells Prometheus "My metrics are at this path"
+    prometheus.io/path: "/metrics"
+    # 3. Tells Prometheus "My app is on this port" (the pod port)
+    prometheus.io/port: "{{ .Values.service.targetPort }}"
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "cloudguard.selectorLabels" . | nindent 4 }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http

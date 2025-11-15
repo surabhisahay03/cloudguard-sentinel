@@ -33,6 +33,9 @@ RUN pip install --no-cache /wheels/*
 # Copy app source code
 COPY app /app
 
+# Copy the trained model and feature list into the image
+COPY ml/models /ml/models
+
 # Expose port
 EXPOSE 8000
 

@@ -65,6 +65,19 @@ db.sqlite3-journal
 instance/
 .webassets-cache
 
+# MLflow and data
+mlruns/
+ml/data_proc/
+ml/data_raw/
+
+# Unused configs
+monitoring/
+
+# terraform file
+# Terraform cache
+**/.terraform/
+**/.terraform.lock.hcl
+
 # Scrapy stuff:
 .scrapy
 

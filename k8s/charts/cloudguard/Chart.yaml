@@ -1,0 +1,6 @@
+apiVersion: v2                 # Helm chart schema version (v2 for Helm 3)
+name: cloudguard               # Chart name (used in release naming)
+description: CloudGuard application Helm chart
+type: application              # "application" vs "library"
+version: 0.1.0                 # Chart (package) version
+appVersion: "1.0.3"            # Your app's version (informational)

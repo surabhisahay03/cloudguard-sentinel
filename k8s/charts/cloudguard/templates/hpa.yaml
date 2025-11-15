@@ -1,0 +1,29 @@
+{{- if .Values.hpa.enabled -}}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "cloudguard.fullname" . }}
+  labels:
+    {{- include "cloudguard.labels" . | nindent 4 }}
+spec:
+  # This points the HPA at your "cg-cloudguard" deployment
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "cloudguard.fullname" . }}
+
+  # Set the min/max number of pods
+  minReplicas: {{ .Values.hpa.minReplicas }}
+  maxReplicas: {{ .Values.hpa.maxReplicas }}
+
+  # Define the rules for scaling
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        # This is the "rule": if pod CPU usage goes above 50%,
+        # start adding more pods (up to the max)
+        averageUtilization: {{ .Values.hpa.targetCPUUtilizationPercentage }}
+{{- end -}}

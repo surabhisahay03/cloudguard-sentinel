@@ -1,0 +1,22 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/surabhisahay03/cloudguard-sentinel
+  tag: 1.0.7
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: true
+  class: nginx
+  host: cloudguard.local
+
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 5  # We'll allow it to scale up to 5 pods
+  targetCPUUtilizationPercentage: 50 # If CPU hits 50%, scale up
