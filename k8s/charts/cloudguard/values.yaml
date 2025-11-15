@@ -1,8 +1,9 @@
 replicaCount: 1
 
 image:
-  repository: nginx
-  tag: "stable"
+  repository: ghcr.io/surabhisahay03/cloudguard-sentinel
+  tag: latest
+  pullPolicy: Always
 
 service:
   type: ClusterIP
