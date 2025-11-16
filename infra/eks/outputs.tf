@@ -1,5 +1,5 @@
 output "kubeconfig_command" {
-  value = "aws eks update-kubeconfig --region us-east-1 --name cloudguard-eks"
+  value = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
   description = "Run this to connect kubectl to the new cluster"
 }
 

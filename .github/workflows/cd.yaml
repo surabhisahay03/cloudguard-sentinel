@@ -1,0 +1,47 @@
+name: CD - Deploy Infrastructure (Terraform)
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'infra/**'  # <-- IMPORTANT: Only runs if you change files in your 'infra' folder
+
+# These permissions are required for the OIDC (password-less) login
+permissions:
+  id-token: write   # <-- Allows the workflow to get a GitHub OIDC token
+  contents: read    # <-- Allows the workflow to check out your code
+
+jobs:
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+    env:
+        TF_VAR_cluster_admin_arn: ${{ secrets.EKS_ADMIN_ARN }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # You will need to create this IAM Role in your AWS account
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1  # <-- Change this to your AWS region
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0 # You can pin this to your version
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./infra/eks  # <-- Runs in your 'eks' folder
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ./infra/eks
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: ./infra/eks

@@ -1,3 +1,4 @@
+# --- 1. CONFIGURATION ---
 terraform {
   required_version = ">= 1.7.0"
   required_providers {
@@ -5,6 +6,7 @@ terraform {
   }
 
   backend "s3" {
+    # These values are for the backend and must be hardcoded here
     bucket         = "tfstate-surabhisahay03-cloudguard"
     key            = "eks/terraform.tfstate"
     region         = "us-east-1"
@@ -17,18 +19,9 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Use default VPC & subnets
+# --- 2. DATA LOOKUPS (The "Read" step) ---
 data "aws_vpc" "default" { default = true }
 
-# # Get all subnet IDs in that VPC (v5 syntax)
-# data "aws_subnets" "default" {
-#   filter {
-#     name   = "vpc-id"
-#     values = [data.aws_vpc.default.id]
-#   }
-# }
-
-# Only subnets in supported AZs (exclude 1e)
 data "aws_subnets" "eks_supported" {
   filter {
     name   = "vpc-id"
@@ -36,31 +29,32 @@ data "aws_subnets" "eks_supported" {
   }
   filter {
     name   = "availability-zone"
-    values = ["us-east-1a", "us-east-1b"]  # <-- adjust if needed
+    values = var.availability_zones
   }
 }
 
-# EKS module: creates the cluster + a small node group
+# --- 3. THE RESOURCES (The "Write" step) ---
 module "eks" {
-  source          = "terraform-aws-modules/eks/aws"
-  version         = "~> 20.2"
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.2"
 
-  cluster_name    = "cloudguard-eks"
-  cluster_version = "1.30"
+  cluster_name    = var.cluster_name
+  cluster_version = var.cluster_version
 
-  vpc_id     = data.aws_vpc.default.id
+  vpc_id                   = data.aws_vpc.default.id
   subnet_ids               = data.aws_subnets.eks_supported.ids
-  control_plane_subnet_ids = data.aws_subnets.eks_supported.ids  # explicit & safe
+  control_plane_subnet_ids = data.aws_subnets.eks_supported.ids
 
-  cluster_endpoint_public_access  = true
-  cluster_endpoint_private_access = false
+  cluster_endpoint_public_access  = var.cluster_endpoint_public_access
+  cluster_endpoint_private_access = var.cluster_endpoint_private_access
 
-    # --- Grant your IAM user cluster-admin automatically ---
+  # --- Grant your IAM user cluster-admin automatically ---
   access_entries = {
     admin = {
-      principal_arn = "arn:aws:iam::447646782725:user/terraform-admin"
+      principal_arn = var.cluster_admin_arn # <-- Already a variable (good!)
       policy_associations = {
         admin = {
+          # This ARN is a fixed AWS policy, so it's fine to leave hardcoded
           policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = { type = "cluster" }
         }
@@ -70,10 +64,12 @@ module "eks" {
 
   eks_managed_node_groups = {
     default = {
-      instance_types = ["t3.medium"]
-      desired_size   = 1
-      max_size       = 1
-      min_size       = 1
+      instance_types = [var.eks_node_instance_type] # <-- Already a variable (good!)
+
+      # This is a better, more flexible way to size your nodes
+      min_size     = var.eks_node_min_size
+      max_size     = var.eks_node_max_size
+      desired_size = var.eks_node_desired_size
     }
   }
 }
