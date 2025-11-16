@@ -1,0 +1,38 @@
+name: CD - Destroy Infrastructure (Terraform)
+
+# This is the key: It makes it a MANUAL trigger
+on:
+  workflow_dispatch:
+
+# These permissions are required for the OIDC (password-less) login
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  destroy-infrastructure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # Get this ARN from your GitHub Secrets
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./infra/eks
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve  # <-- This is the only change
+        working-directory: ./infra/eks
