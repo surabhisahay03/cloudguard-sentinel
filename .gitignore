@@ -76,7 +76,6 @@ monitoring/
 # terraform file
 # Terraform cache
 **/.terraform/
-**/.terraform.lock.hcl
 
 # Scrapy stuff:
 .scrapy

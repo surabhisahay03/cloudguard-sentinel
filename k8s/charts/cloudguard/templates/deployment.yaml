@@ -14,16 +14,34 @@ spec:
       labels:
         {{- include "cloudguard.selectorLabels" . | nindent 8 }}
     spec:
+      # --- NEW SECTION 1 ---
+      # This tells the pod to use the ServiceAccount
+      # that we are about to create.
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      # --- END NEW SECTION 1 ---
+
       containers:
         - name: app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          # --- NEW SECTION 2 ---
+          # This injects the S3 bucket name from our values.yaml
+          # into the container as an environment variable.
+          # Our Python code (os.getenv) will read this.
+          env:
+            - name: "LOG_BUCKET_NAME"
+              value: "{{ .Values.s3.log_bucket_name }}"
+          # --- END NEW SECTION 2 ---
+
           resources:
             requests:
-              cpu: "100m"  # Request 10% of a CPU
-              memory: "64Mi" # Request 64MB of Memory
+              cpu: "100m"
+              memory: "64Mi"
             limits:
-              cpu: "500m"  # Don't let it use more than 50% of a CPU
+              cpu: "500m"
               memory: "128Mi"
           ports:
             - containerPort: {{ .Values.service.targetPort }}

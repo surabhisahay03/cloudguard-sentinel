@@ -1,13 +1,21 @@
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
+import boto3
 import joblib
 import pandas as pd
 from fastapi import FastAPI
 from prometheus_client import Counter, Gauge
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
+
+# Initialize a Boto3 S3 client
+s3_client = boto3.client("s3", region_name="us-east-1")
+
+# Define a variable for our S3 bucket.
+LOG_BUCKET_NAME = os.getenv("LOG_BUCKET_NAME", "cloudguard-sentinel-datalogs-fallback")
 
 app = FastAPI(title="CloudGuard Sentinel API", version="1.0.0")
 Instrumentator().instrument(app).expose(app)
@@ -74,13 +82,45 @@ def health():
 # --- Prediction endpoint ---
 @app.post("/predict")
 def predict(tel: Telemetry):
-    # Create a 1-row DataFrame in the exact feature order used in training
-    df = pd.DataFrame([{**tel.model_dump()}])[feature_list]
-    proba = float(model.predict_proba(df)[:, 1][0])
+
+    df = pd.DataFrame([tel.model_dump()])[feature_list]
+    proba = float(model.predict_proba(df)[1][0])
     label = int(proba >= 0.5)
 
     PREDICTIONS_TOTAL.inc()
     LAST_FAILURE_RISK.set(proba)
+
+    # --- NEW: Logging logic starts here ---
+    # We add this 'try' block *after* all prediction
+    # logic but *before* the final 'return'
+    try:
+        # 1. Create the data payload using YOUR variables
+        log_data = {
+            "timestamp": datetime.datetime.now(timezone.utc).isoformat(),
+            "input_features": tel.model_dump(),  # Using your 'tel' object
+            "prediction_label": label,  # Using your 'label' var
+            "prediction_probability": proba,  # Using your 'proba' var
+        }
+
+        # 2. Create a unique object key (filename)
+        # This partitioning is great for Athena/Spark later
+        current_date = datetime.datetime.now(timezone.utc)
+        object_key = (
+            f"year={current_date.year}/"
+            f"month={current_date.month:02d}/"
+            f"day={current_date.day:02d}/"
+            f"{current_date.isoformat()}.json"
+        )
+
+        # 3. Upload the data to S3
+        s3_client.put_object(
+            Bucket=LOG_BUCKET_NAME,  # Now uses our env variable
+            Key=object_key,
+            Body=json.dumps(log_data),
+        )
+
+    except Exception as e:
+        print(f"ERROR: Failed to log prediction to S3: {e}")
 
     return {"failure_risk": proba, "label": label}
 

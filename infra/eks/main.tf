@@ -19,6 +19,8 @@ provider "aws" {
   region = var.aws_region
 }
 
+
+
 # --- 2. DATA LOOKUPS (The "Read" step) ---
 data "aws_vpc" "default" { default = true }
 
@@ -30,6 +32,25 @@ data "aws_subnets" "eks_supported" {
   filter {
     name   = "availability-zone"
     values = var.availability_zones
+  }
+}
+
+
+# --- NEW DATA BLOCK FOR IRSA POLICY ---
+# This policy says: "You are allowed to 'PutObject' (upload)
+# into our new log bucket, and only that bucket."
+data "aws_iam_policy_document" "app_pod_s3_policy_doc" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:PutObject"
+    ]
+    resources = [
+      # This is critical: The policy is locked
+      # to our bucket AND all objects inside it.
+      aws_s3_bucket.prediction_logs.arn,
+      "${aws_s3_bucket.prediction_logs.arn}/*"
+    ]
   }
 }
 
@@ -72,4 +93,78 @@ module "eks" {
       desired_size = var.eks_node_desired_size
     }
   }
+}
+
+
+# --- S3 Bucket for ML Prediction Logs ---
+# (This is our new resource, placed after the EKS module in Section 3)
+resource "aws_s3_bucket" "prediction_logs" {
+  # We get the bucket name from a variable to keep it flexible
+  bucket = var.prediction_log_bucket_name
+
+  # Prevents the S3 bucket from being accidentally deleted
+  # by 'terraform destroy'. We'll have to manually empty
+  # and delete it, which is safer for production data.
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# Enforce security best practices:
+# 1. Block all public access
+# 2. Enable server-side encryption by default
+resource "aws_s3_bucket_public_access_block" "prediction_logs_pac" {
+  bucket = aws_s3_bucket.prediction_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "prediction_logs_sse" {
+  bucket = aws_s3_bucket.prediction_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# --- IAM Role for Service Account (IRSA) for our App Pod ---
+# (This is our other new resource, also in Section 3)
+resource "aws_iam_role" "app_pod_role" {
+  name = "cloudguard-app-pod-role"
+
+  # This is the "Trust Policy". It trusts the EKS OIDC provider
+  # to authenticate a service account from our namespace.
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          # Trusts the OIDC provider for our cluster
+          Federated = module.eks.oidc_provider_arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            # This is the key: It only allows a ServiceAccount
+            # named 'cloudguard-sa' from the 'cloudguard' namespace.
+            # We will create this ServiceAccount in Helm later.
+            "${module.eks.oidc_provider}:sub" = "system:serviceaccount:cloudguard:cloudguard-sa"
+          }
+        }
+      }
+    ]
+  })
+}
+
+# 3. Attach the S3 Policy to the IAM Role
+resource "aws_iam_role_policy" "app_pod_s3_policy" {
+  name   = "s3-log-writer-policy"
+  role   = aws_iam_role.app_pod_role.name
+  policy = data.aws_iam_policy_document.app_pod_s3_policy_doc.json
 }

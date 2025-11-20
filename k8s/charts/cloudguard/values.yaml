@@ -21,3 +21,24 @@ hpa:
   minReplicas: 1
   maxReplicas: 5
   targetCPUUtilizationPercentage: 50
+
+# -----------------------------------------------
+# Service Account & S3 Logging Configuration
+# -----------------------------------------------
+
+# Create a service account?
+serviceAccount:
+  create: true
+
+  # The name of the service account to create
+  name: "cloudguard-sa"
+
+  # Annotations for the service account
+  # This is the "magic" that links our Kubernetes
+  # ServiceAccount to our AWS IAM Role (IRSA).
+  annotations:
+    eks.amazonaws.com/role-arn: "YOUR_IAM_ROLE_ARN_GOES_HERE"
+
+# S3 logging configuration
+s3:
+  log_bucket_name: "YOUR_S3_BUCKET_NAME_GOES_HERE"

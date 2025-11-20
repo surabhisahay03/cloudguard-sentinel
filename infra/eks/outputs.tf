@@ -12,3 +12,8 @@ output "cluster_endpoint" {
   description = "Endpoint URL of the EKS cluster"
   value       = module.eks.cluster_endpoint
 }
+
+output "app_pod_role_arn" {
+  description = "The ARN of the IAM role for the app pods."
+  value       = aws_iam_role.app_pod_role.arn
+}
