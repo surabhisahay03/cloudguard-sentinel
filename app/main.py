@@ -84,7 +84,7 @@ def health():
 def predict(tel: Telemetry):
 
     df = pd.DataFrame([tel.model_dump()])[feature_list]
-    proba = float(model.predict_proba(df)[1][0])
+    proba = float(model.predict_proba(df)[0][1])
     label = int(proba >= 0.5)
 
     PREDICTIONS_TOTAL.inc()
