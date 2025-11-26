@@ -6,6 +6,7 @@ on:
       - 'main'
     paths:
       - 'infra/**'  # <-- IMPORTANT: Only runs if you change files in your 'infra' folder
+  workflow_dispatch:
 
 # These permissions are required for the OIDC (password-less) login
 permissions:
