@@ -37,8 +37,8 @@ serviceAccount:
   # This is the "magic" that links our Kubernetes
   # ServiceAccount to our AWS IAM Role (IRSA).
   annotations:
-    eks.amazonaws.com/role-arn: "YOUR_IAM_ROLE_ARN_GOES_HERE"
+    eks.amazonaws.com/role-arn: "arn:aws:iam::447646782725:role/cloudguard-app-pod-role"
 
 # S3 logging configuration
 s3:
-  log_bucket_name: "YOUR_S3_BUCKET_NAME_GOES_HERE"
+  log_bucket_name: "cloudguard-sentinel-datalogs-surabhi"
