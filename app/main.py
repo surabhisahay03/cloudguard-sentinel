@@ -96,7 +96,7 @@ def predict(tel: Telemetry):
     try:
         # 1. Create the data payload using YOUR variables
         log_data = {
-            "timestamp": datetime.datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "input_features": tel.model_dump(),  # Using your 'tel' object
             "prediction_label": label,  # Using your 'label' var
             "prediction_probability": proba,  # Using your 'proba' var
@@ -104,7 +104,7 @@ def predict(tel: Telemetry):
 
         # 2. Create a unique object key (filename)
         # This partitioning is great for Athena/Spark later
-        current_date = datetime.datetime.now(timezone.utc)
+        current_date = datetime.now(timezone.utc)
         object_key = (
             f"year={current_date.year}/"
             f"month={current_date.month:02d}/"
