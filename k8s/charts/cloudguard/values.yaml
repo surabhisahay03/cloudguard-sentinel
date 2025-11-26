@@ -13,7 +13,12 @@ service:
 ingress:
   enabled: true
   class: nginx
-  host: cloudguard.local
+  annotations: {}
+  hosts:
+    - host: buildwithsurabhi.com
+      paths:
+        - path: /
+          pathType: Prefix
 
 # Horizontal Pod Autoscaler
 hpa:
