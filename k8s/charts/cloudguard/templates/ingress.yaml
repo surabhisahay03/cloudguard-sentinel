@@ -5,16 +5,24 @@ metadata:
   name: {{ include "cloudguard.fullname" . }}-ingress
   annotations:
     kubernetes.io/ingress.class: {{ .Values.ingress.class }}
+    # Add this to ensure annotations from values.yaml are applied
+    {{- if .Values.ingress.annotations }}
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+    {{- end }}
 spec:
   rules:
-    - host: {{ .Values.ingress.host }}
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
       http:
         paths:
-          - path: /
-            pathType: Prefix
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
             backend:
               service:
-                name: {{ include "cloudguard.fullname" . }}
+                name: {{ include "cloudguard.fullname" $ }}
                 port:
-                  number: {{ .Values.service.port }}
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+    {{- end }}
 {{- end }}

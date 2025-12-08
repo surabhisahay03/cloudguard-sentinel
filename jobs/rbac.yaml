@@ -4,7 +4,7 @@ metadata:
     name: workflow-runner
     namespace: argo
     annotations:
-      eks.amazonaws.com/role-arn: "arn:aws:iam::YOUR_ACCOUNT_ID:role/cloudguard-app-pod-role"
+      eks.amazonaws.com/role-arn: "arn:aws:iam::447646782725:role/cloudguard-app-pod-role"
 
 ---
 
@@ -30,7 +30,7 @@ subjects:
 - kind: ServiceAccount
   name: workflow-runner
   namespace: argo
-roleref:
+roleRef:
   kind: Role
   name: workflow-role
   apiGroup: rbac.authorization.k8s.io
