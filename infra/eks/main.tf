@@ -134,27 +134,56 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "prediction_logs_s
 
 # --- IAM Role for Service Account (IRSA) for our App Pod ---
 # (This is our other new resource, also in Section 3)
+# resource "aws_iam_role" "app_pod_role" {
+#   name = "cloudguard-app-pod-role"
+
+#   # This is the "Trust Policy". It trusts the EKS OIDC provider
+#   # to authenticate a service account from our namespace.
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Principal = {
+#           # Trusts the OIDC provider for our cluster
+#           Federated = module.eks.oidc_provider_arn
+#         }
+#         Action = "sts:AssumeRoleWithWebIdentity"
+#         Condition = {
+#           StringEquals = {
+#             # This is the key: It only allows a ServiceAccount
+#             # named 'cloudguard-sa' from the 'cloudguard' namespace.
+#             # We will create this ServiceAccount in Helm later.
+#             "${module.eks.oidc_provider}:sub" = "system:serviceaccount:cloudguard:cloudguard-sa"
+#           }
+#         }
+#       }
+#     ]
+#   })
+# }
+
+# --- IAM Role for Service Account (IRSA) ---
 resource "aws_iam_role" "app_pod_role" {
   name = "cloudguard-app-pod-role"
 
-  # This is the "Trust Policy". It trusts the EKS OIDC provider
-  # to authenticate a service account from our namespace.
+  # TRUST POLICY FIX: We updated this to allow a LIST of Service Accounts.
+  # This acts as the "Bouncer" letting two different VIPs into the club.
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Effect = "Allow"
         Principal = {
-          # Trusts the OIDC provider for our cluster
           Federated = module.eks.oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            # This is the key: It only allows a ServiceAccount
-            # named 'cloudguard-sa' from the 'cloudguard' namespace.
-            # We will create this ServiceAccount in Helm later.
-            "${module.eks.oidc_provider}:sub" = "system:serviceaccount:cloudguard:cloudguard-sa"
+            # Note the square brackets [] below. This allows multiple Service Accounts.
+            "${module.eks.oidc_provider}:sub" = [
+              "system:serviceaccount:default:cloudguard-service-account", # 1. The FastAPI App
+              "system:serviceaccount:argo:workflow-runner"                # 2. The Argo Workflow (Trainer)
+            ]
           }
         }
       }

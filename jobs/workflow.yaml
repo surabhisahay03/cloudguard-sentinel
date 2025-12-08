@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: cloudguard-retrain-
+spec:
+  serviceAccountName: workflow-runner
+  entrypoint: training-pipeline
+  templates:
+  - name: training-pipeline
+    steps:
+    - - name: train-model
+        template: trainer
+
+  - name: trainer
+    container:
+      image: ghcr.io/surabhisahay03/cloudguard-trainer:v1
+      imagePullPolicy: Always
+      command: ["python", "train.py"]
+      env:
+        - name: LOG_BUCKET_NAME
+          value: "cloudguard-sentinel-datalogs-surabhi"

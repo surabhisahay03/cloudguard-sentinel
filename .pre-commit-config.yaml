@@ -5,6 +5,7 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: check-yaml
+        args: [--allow-multiple-documents]
         exclude: ^k8s/charts/cloudguard/templates/.*\.yaml$
 
   - repo: https://github.com/pycqa/isort
