@@ -13,7 +13,7 @@ spec:
 
   - name: trainer
     container:
-      image: ghcr.io/surabhisahay03/cloudguard-trainer:v1
+      image: ghcr.io/surabhisahay03/cloudguard-trainer:latest
       imagePullPolicy: Always
       command: ["python", "train.py"]
       env:

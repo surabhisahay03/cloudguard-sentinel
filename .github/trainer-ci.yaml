@@ -1,0 +1,36 @@
+name: Trainer CI Pipeline
+
+on:
+  push:
+    paths:
+      - 'jobs/**'
+      - '.github/workflows/trainer-ci.yaml'
+    branches: [main]
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Dcoker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Trainer image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./jobs
+          file: ./jobs/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.actor }}/cloudguard-trainer:latest
+            ghcr.io/${{ github.actor }}/cloudguard-trainer:${{ github.sha }}
