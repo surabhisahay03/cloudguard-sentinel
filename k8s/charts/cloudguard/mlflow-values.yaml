@@ -1,19 +1,16 @@
 # k8s/charts/cloudguard/mlflow-values.yaml
 
-# 1. ARTIFACT ROOT (Must be an object)
+# 1. ARTIFACT ROOT
 artifactRoot:
   s3:
     enabled: true
     bucket: "cloudguard-sentinel-datalogs-surabhi"
-    # We leave keys empty because we are using IRSA (IAM Roles)
 
-# 2. SERVICE ACCOUNT (The "Passport")
+# 2. SERVICE ACCOUNT
 serviceAccount:
   create: true
   name: "mlflow-server"
   annotations:
-    # IMPORTANT: You must replace this with your actual IAM Role ARN
-    # (The same one we used for the App and Trainer)
     eks.amazonaws.com/role-arn: "arn:aws:iam::447646782725:role/cloudguard-app-pod-role"
 
 # 3. S3 CONFIGURATION
@@ -21,4 +18,7 @@ extraEnvVars:
   MLFLOW_S3_ENDPOINT_URL: "https://s3.us-east-1.amazonaws.com"
   MLFLOW_S3_IGNORE_TLS: "false"
 
-# 4. REMOVE 'backendStore' block to default to SQLite (Simpler for now)
+# 4. SECURITY FIX (This is what is missing!)
+# This tells MLflow to accept connections from your training job.
+extraArgs:
+  host: "0.0.0.0"
