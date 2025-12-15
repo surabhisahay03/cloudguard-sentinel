@@ -48,25 +48,25 @@ variable "cluster_admin_arn" {
 variable "eks_node_instance_type" {
   description = "The EC2 instance type for the EKS nodes."
   type        = string
-  default     = "t3.medium" # <-- The default value
+  default     = "t3.small" # <-- The default value
 }
 
 variable "eks_node_min_size" {
   description = "The minimum number of nodes for the node group."
   type        = number
-  default     = 2 # <-- The default value
+  default     = 1 # <-- The default value
 }
 
 variable "eks_node_max_size" {
   description = "The maximum number of nodes for the node group."
   type        = number
-  default     = 4 # <-- The default value
+  default     = 2 # <-- The default value
 }
 
 variable "eks_node_desired_size" {
   description = "The desired number of nodes for the node group."
   type        = number
-  default     = 2 # <-- The default value
+  default     = 1 # <-- The default value
 }
 
 variable "prediction_log_bucket_name" {
