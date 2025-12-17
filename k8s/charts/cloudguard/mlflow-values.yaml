@@ -34,13 +34,16 @@ image:
   pullpolicy: Always
 
   # This changes it from FASTAPI to MLflow Server
-  command: ["mlflow", "server"]
+  command:
+    - "mlflow"
+    - "server"
 
 # 4. Connect MLFLOW to PostgreSQL and S3
 # We construct the connection strings here using the sub-chart's DNS names.
 # The format is: postgresql://[user]:[password]@[release-name]-postgresql:5432/[db_name]
 extraArgs:
   host: "0.0.0.0"
+  port: "5000"
   # Note: 'mlflow' is the release name we use in the helm command below
   backend-store-uri: "postgresql://mlflow:mlflow-password@mlflow-db-postgresql:5432/mlflow"
   default-artifact-root: "s3://cloudguard-sentinel-datalogs-surabhi/"
