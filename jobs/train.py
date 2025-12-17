@@ -12,13 +12,24 @@ from sklearn.model_selection import train_test_split
 # 1. We read the MLflow URL from the environment (injected by K8s)
 #    Defaulting to the internal DNS we found earlier.
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow.mlflow.svc.cluster.local:80")
-EXPERIMENT_NAME = "machine-failure-prediction"
+EXPERIMENT_NAME = "machine-failure-prediction-v2"
 
 
 def train():
     # 2. Connect to the MLflow Server
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    mlflow.set_experiment(EXPERIMENT_NAME)
+    print(f"1. Connecting to Tracking URI: {MLFLOW_TRACKING_URI}")
+
+    # --- ENHANCED DEBUGGING ---
+    # Set the experiment
+    experiment = mlflow.set_experiment(EXPERIMENT_NAME)
+
+    # Print what the server told us!
+    print(f"2. Experiment Name: {experiment.name}")
+    print(f"3. Experiment ID:   {experiment.experiment_id}")
+    print(f"4. Artifact Loc:    {experiment.artifact_location}")
+    print(f"5. Lifecycle Stage: {experiment.lifecycle_stage}")
+    # ^^^ If this says 'deleted', that's your smoking gun!
 
     print(f"Starting MLflow run on {MLFLOW_TRACKING_URI}...")
 

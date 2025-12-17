@@ -4,3 +4,11 @@ description: CloudGuard application Helm chart
 type: application              # "application" vs "library"
 version: 0.1.0                 # Chart (package) version
 appVersion: "1.0.3"            # Your app's version (informational)
+
+# Pstgresql section
+dependencies:
+  - name: postgresql
+    version: 13.2.5
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+    alias: postgresql

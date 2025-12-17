@@ -43,12 +43,18 @@ data "aws_iam_policy_document" "app_pod_s3_policy_doc" {
   statement {
     effect = "Allow"
     actions = [
-      "s3:PutObject"
+      "s3:PutObject",          # Allow writing models
+      "s3:GetObject",          # Allow reading models (for deployment)
+      "s3:ListBucket",         # Allow checking if the folder exists (Fixes your error!)
+      "s3:GetBucketLocation",  # Helper for region detection
+      "s3:DeleteObject"        # Allow deleting experiments from UI
     ]
     resources = [
-      # This is critical: The policy is locked
-      # to our bucket AND all objects inside it.
+      # Keep BOTH of these lines.
+      # Line 1 allows "ListBucket" (on the bucket itself)
       aws_s3_bucket.prediction_logs.arn,
+
+      # Line 2 allows "Put/Get/Delete" (on the files inside)
       "${aws_s3_bucket.prediction_logs.arn}/*"
     ]
   }
@@ -153,7 +159,8 @@ resource "aws_iam_role" "app_pod_role" {
             # Note the square brackets [] below. This allows multiple Service Accounts.
             "${module.eks.oidc_provider}:sub" = [
               "system:serviceaccount:default:cloudguard-sa",              # 1. The FastAPI App
-              "system:serviceaccount:argo:workflow-runner"                # 2. The Argo Workflow (Trainer)
+              "system:serviceaccount:argo:workflow-runner",               # 2. The Argo Workflow (Trainer)
+              "system:serviceaccount:mlflow:mlflow-server"
             ]
           }
         }

@@ -1,0 +1,54 @@
+name: Deploy Application (Helm)
+
+on:
+    push:
+        branches:
+            - "main"
+        paths:
+            - "k8s/**"  # <-- Only runs when you change Helm charts or App config
+    workflow_dispatch:
+        # Allows manual triggering from the Actions tab
+
+jobs:
+    deploy-mlflow:
+        name: Deploy MLflow to EKS
+        runs-on: ubuntu-latest
+
+        steps:
+            # Get the code
+            - name: Checkout the code
+              uses: actions/checkout@v4
+
+            # Login to AWS (using keys added to secrets)
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID}}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+                  aws-region: us-east-1
+
+            # Connect kubectl to EKS
+            - name: Update Kubeconfig
+              run: |
+                aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME}} --region us-east-1
+
+            # Install Helm Tool
+            - name: Install Helm
+              uses: azure/setup-helm@v4
+              with:
+                  version: v3.12.0
+
+            # Build Dependencies (This downloads the Postgres sub-chart)
+            - name: Build Chart Dependencies
+              run: |
+                helm dependency build k8s/charts/cloudguard
+
+            # Deploy/ Upgrade the App
+            # We force the persistence=false flag here to ensure it works smoothly
+            - name: Deploy MLflow
+              run: |
+                helm upgrade --instsll mlflow k8s/charts/cloudguard \
+                    --namespace mlflow --create namespace \
+                    -f k8s/charts/cloudguard/mlflow-values.yaml \
+                    --set postgresql.primary.persistence.enabled=false \
+                    --wait --timeout 10m
