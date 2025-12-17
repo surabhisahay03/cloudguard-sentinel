@@ -35,6 +35,8 @@ image:
 
 # This changes it from FASTAPI to MLflow Server
 command:
+  - python
+  - "-m"
   - "mlflow"
   - "server"
 
