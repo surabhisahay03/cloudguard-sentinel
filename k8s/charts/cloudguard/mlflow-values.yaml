@@ -33,10 +33,10 @@ image:
   tag: latest
   pullpolicy: Always
 
-  # This changes it from FASTAPI to MLflow Server
-  command:
-    - "mlflow"
-    - "server"
+# This changes it from FASTAPI to MLflow Server
+command:
+  - "mlflow"
+  - "server"
 
 # 4. Connect MLFLOW to PostgreSQL and S3
 # We construct the connection strings here using the sub-chart's DNS names.
