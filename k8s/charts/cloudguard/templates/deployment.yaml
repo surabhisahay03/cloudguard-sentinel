@@ -27,6 +27,20 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
 
+          # This tells kubernetes if a command is defined in values.yaml, use it.
+          {{- if .Values.command }}
+          command:
+            {{- toYaml .Values.command | nindent 12}}
+          {{- end }}
+
+          # This loops through any extra arguments and turns them into flags (e.g. --host=0.0.0.0)
+          {{- if .Values.extraArgs }}
+          args:
+            {{- range $key, $value := .Values.extraArgs }}
+            - "--{{ $key }}={{ $value }}"
+            {{- end }}
+          {{- end }}
+
           # --- NEW SECTION 2 ---
           # This injects the S3 bucket name from our values.yaml
           # into the container as an environment variable.
