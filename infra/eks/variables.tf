@@ -21,7 +21,7 @@ variable "cluster_version" {
 variable "availability_zones" {
   description = "A list of availability zones to use for the cluster."
   type        = list(string)
-  default     = ["us-east-1a", "us-east-1b","us-east-1c", "us-east-1d", "us-east-1e", "us-east-1f"] # <-- The default value
+  default     = ["us-east-1a", "us-east-1b","us-east-1c", "us-east-1d", "us-east-1f"] # <-- The default value
 }
 
 variable "cluster_endpoint_public_access" {
