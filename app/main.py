@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import boto3
+import mlflow
 import mlflow.sklearn
 import pandas as pd
 from fastapi import FastAPI, HTTPException
@@ -103,7 +104,7 @@ def load_latest_model():
     """
     Connects to MLflow and loads the latest Production model.
     """
-    global model_state
+
     try:
         mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
         client = mlflow.MlflowClient()
