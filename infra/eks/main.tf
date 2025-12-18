@@ -35,6 +35,17 @@ data "aws_subnets" "eks_supported" {
   }
 }
 
+data "aws_subnets" "control_plane"{
+  filter {
+    name = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+  filter {
+    name = "availability-zone"
+    values = ["us-east-1a", "us-east-1b"]
+  }
+}
+
 
 # --- NEW DATA BLOCK FOR IRSA POLICY ---
 # This policy says: "You are allowed to 'PutObject' (upload)
@@ -70,7 +81,7 @@ module "eks" {
 
   vpc_id                   = data.aws_vpc.default.id
   subnet_ids               = data.aws_subnets.eks_supported.ids
-  control_plane_subnet_ids = data.aws_subnets.eks_supported.ids
+  control_plane_subnet_ids = data.aws_subnets.control_plane.ids
 
   cluster_endpoint_public_access  = var.cluster_endpoint_public_access
   cluster_endpoint_private_access = var.cluster_endpoint_private_access
