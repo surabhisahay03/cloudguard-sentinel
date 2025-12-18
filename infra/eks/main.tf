@@ -93,6 +93,8 @@ module "eks" {
     default = {
       instance_types = [var.eks_node_instance_type] # <-- Already a variable (good!)
 
+      capacity_type = "SPOT"
+
       # This is a better, more flexible way to size your nodes
       min_size     = var.eks_node_min_size
       max_size     = var.eks_node_max_size
