@@ -21,7 +21,7 @@ variable "cluster_version" {
 variable "availability_zones" {
   description = "A list of availability zones to use for the cluster."
   type        = list(string)
-  default     = ["us-east-1a", "us-east-1b"] # <-- The default value
+  default     = ["us-east-1a", "us-east-1b","us-east-1c", "us-east-1d", "us-east-1e", "us-east-1f"] # <-- The default value
 }
 
 variable "cluster_endpoint_public_access" {
@@ -48,7 +48,7 @@ variable "cluster_admin_arn" {
 variable "eks_node_instance_type" {
   description = "The EC2 instance type for the EKS nodes."
   type        = string
-  default     = "t3.medium" # <-- The default value
+  default     = "t3a.medium" # <-- The default value
 }
 
 variable "eks_node_min_size" {
