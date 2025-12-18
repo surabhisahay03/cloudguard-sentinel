@@ -16,8 +16,6 @@ serviceAccount:
 # 3. PostgreSQL Settings
 postgresql:
   enabled: true
-  image:
-    tag: "latest"
   auth:
     username: "mlflow"
     password: "mlflow-password"

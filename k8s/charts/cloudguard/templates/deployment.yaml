@@ -63,9 +63,9 @@ spec:
             httpGet:
               path: /health
               port: {{ .Values.service.targetPort }}
-            initialDelaySeconds: 5
+            initialDelaySeconds: 30
           livenessProbe:
             httpGet:
               path: /health
               port: {{ .Values.service.targetPort }}
-            initialDelaySeconds: 10
+            initialDelaySeconds: 60
