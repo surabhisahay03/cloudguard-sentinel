@@ -16,13 +16,15 @@ serviceAccount:
 # 3. PostgreSQL Settings
 postgresql:
   enabled: true
+  image:
+    tag: "16"
   auth:
     username: "mlflow"
     password: "mlflow-password"
     database: "mlflow"
   # RAMDISK MODE (optional, for better performance)
   primary:
-    persistance:
+    persistence:
       enabled: false
 
 # We explicitly set the image repo here just to be safe, but more importantly, we override the COMMAND
@@ -30,6 +32,9 @@ image:
   repository: ghcr.io/mlflow/mlflow
   tag: v2.14.1
   pullPolicy: IfNotPresent
+
+# Set the command
+command: ["mlflow", "server"]
 
 # Service & Port Settings
 service:
