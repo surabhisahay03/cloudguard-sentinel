@@ -17,7 +17,7 @@ serviceAccount:
 postgresql:
   enabled: true
   image:
-    tag: "16"
+    tag: "16.1.0-debian-11-r13"
   auth:
     username: "mlflow"
     password: "mlflow-password"
