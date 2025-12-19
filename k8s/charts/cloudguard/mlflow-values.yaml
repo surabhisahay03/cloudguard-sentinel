@@ -17,7 +17,9 @@ serviceAccount:
 postgresql:
   enabled: true
   image:
-    tag: "16.6.0-debian-12-r0"
+    registry: public.ecr.aws
+    repository: bitnami/postgresql
+    tag: "16"
   auth:
     username: "mlflow"
     password: "mlflow-password"
@@ -34,7 +36,20 @@ image:
   pullPolicy: IfNotPresent
 
 # Set the command
-command: ["mlflow", "server"]
+command:
+  - "/bin/bash"
+  - "-c"
+  - "pip install psycopg2-binary boto3 && mlflow server \"$@\""
+  - "--"
+
+# Memory and CPU settings
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 250m
+    memory: 512Mi
 
 # Service & Port Settings
 service:
