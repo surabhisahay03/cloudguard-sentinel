@@ -6,6 +6,7 @@ on:
       - 'jobs/**'           # Only run when we touch training code
       - '.github/workflows/trainer-ci.yaml'
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build_and_push:
