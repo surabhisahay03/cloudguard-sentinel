@@ -4,7 +4,7 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Install dependencies
-RUN pip install pandas scikit-learn xgboost boto3 joblib s3fs mlflow
+RUN pip install pandas scikit-learn xgboost boto3 joblib s3fs "mlflow==2.14.1"
 
 # Copy training script
 COPY train.py .
