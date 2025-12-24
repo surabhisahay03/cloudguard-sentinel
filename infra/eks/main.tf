@@ -171,7 +171,7 @@ resource "aws_iam_role" "app_pod_role" {
           StringEquals = {
             # Note the square brackets [] below. This allows multiple Service Accounts.
             "${module.eks.oidc_provider}:sub" = [
-              "system:serviceaccount:default:cloudguard-sa",              # 1. The FastAPI App
+              "system:serviceaccount:cloudguard-system:cloudguard-sa",              # 1. The FastAPI App
               "system:serviceaccount:argo:workflow-runner",               # 2. The Argo Workflow (Trainer)
               "system:serviceaccount:mlflow:mlflow-server"
             ]

@@ -41,14 +41,15 @@ spec:
             {{- end }}
           {{- end }}
 
-          # --- NEW SECTION 2 ---
+
           # This injects the S3 bucket name from our values.yaml
           # into the container as an environment variable.
           # Our Python code (os.getenv) will read this.
           env:
             - name: "LOG_BUCKET_NAME"
               value: "{{ .Values.s3.log_bucket_name }}"
-          # --- END NEW SECTION 2 ---
+            - name: "MLFLOW_TRACKING_URI"
+              value: "{{ .Values.mlflow.mlflow_tracking_uri }}"
 
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

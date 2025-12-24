@@ -27,7 +27,9 @@ postgresql:
   # RAMDISK MODE (optional, for better performance)
   primary:
     persistence:
-      enabled: false
+      enabled: true
+      size: 8Gi
+      storageClass: "gp2"
 
 # We explicitly set the image repo here just to be safe, but more importantly, we override the COMMAND
 image:
@@ -57,7 +59,7 @@ service:
   port: 5000
   targetPort: 5000
 
-# 4. Connect MLFLOW to PostgreSQL and S3
+# Connect MLFLOW to PostgreSQL and S3
 # We construct the connection strings here using the sub-chart's DNS names.
 # The format is: postgresql://[user]:[password]@[release-name]-postgresql:5432/[db_name]
 extraArgs:

@@ -47,3 +47,7 @@ serviceAccount:
 # S3 logging configuration
 s3:
   log_bucket_name: "cloudguard-sentinel-datalogs-surabhi"
+
+# MLFLOW Tracking Uri:
+mlflow:
+  mlflow_tracking_uri: "http://mlflow-cloudguard.mlflow.svc.cluster.local:5000"
