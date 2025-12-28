@@ -50,4 +50,5 @@ s3:
 
 # MLFLOW Tracking Uri:
 mlflow:
-  mlflow_tracking_uri: "http://mlflow-cloudguard.mlflow.svc.cluster.local:5000"
+  # Format: http://<release-name>.<namespace>.svc.cluster.local:<port>
+  mlflow_tracking_uri: "http://mlflow-stack.mlflow.svc.cluster.local:5000"

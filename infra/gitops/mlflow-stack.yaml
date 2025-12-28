@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlflow-stack
+  namespace: argocd
+spec:
+  project: default
+  source:
+  # The Git repository containing our Helm chart for MLflow
+    repoURL: 'https://github.com/surabhisahay03/cloudguard-sentinel.git'
+    targetRevision: HEAD
+    path: k8s/charts/cloudguard
+    helm:
+      valueFiles:
+        - mlflow-values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlflow
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
