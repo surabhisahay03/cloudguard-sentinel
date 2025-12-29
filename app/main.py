@@ -111,16 +111,13 @@ def load_latest_model():
         mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
         client = mlflow.MlflowClient()
 
-        # 1. Get latest 'Production' version
-        # Note: If no model is in Production, this might return empty.
-        # You must promote a model in MLflow UI for this to work!
-        latest_versions = client.get_latest_versions(MODEL_NAME, stages=[MODEL_STAGE])
-
-        if not latest_versions:
-            logger.warning(f"No model found in stage '{MODEL_STAGE}'")
+        try:
+            model_info = client.get_model_version_by_alias(MODEL_NAME, MODEL_STAGE)
+        except Exception:
+            logger.warning("No model found with alias 'production'")
             return
 
-        latest_version = latest_versions[0].version
+        latest_version = model_info.version
 
         # 2. Check if we already have this version
         if model_state["version"] == latest_version and model_state["model"] is not None:
@@ -128,7 +125,7 @@ def load_latest_model():
 
         # 3. Load the new model
         logger.info(f"⬇️ Found new model (v{latest_version}). Loading...")
-        model_uri = f"models:/{MODEL_NAME}/{MODEL_STAGE}"
+        model_uri = f"models:/{MODEL_NAME}@{MODEL_STAGE}"
 
         # We use sklearn.load_model to preserve 'predict_proba' capability
         loaded_model = mlflow.sklearn.load_model(model_uri)
