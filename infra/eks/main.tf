@@ -110,6 +110,22 @@ module "eks" {
       min_size     = var.eks_node_min_size
       max_size     = var.eks_node_max_size
       desired_size = var.eks_node_desired_size
+
+      # This grants your Kubernetes worker nodes the AWS Permission to talk to the storage service (EBS).
+      # Even if the software knows how to create a hard drive, AWS will reject the request with "Access Denied"
+      # because your node doesn't have the authority to create volumes on your AWS account.
+      iam_role_additional_policies = {
+      AmazonEBSCSIDriverPolicy = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+      }
+    }
+
+  }
+
+  # This installs the actual software (the CSI Driver) into your cluster. \
+  # This software runs as a set of pods (usually in the kube-system namespace) that listens for storage requests.
+  cluster_addons = {
+    aws-ebs-csi-driver = {
+      most_recent = true
     }
   }
 }

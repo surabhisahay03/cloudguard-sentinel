@@ -66,5 +66,5 @@ extraArgs:
   host: "0.0.0.0"
   port: "5000"
   # Note: 'mlflow' is the release name we use in the helm command below
-  backend-store-uri: "postgresql://mlflow:mlflow-password@mlflow-postgresql:5432/mlflow"
+  backend-store-uri: "postgresql://mlflow:mlflow-password@mlflow-stack-postgresql:5432/mlflow"
   default-artifact-root: "s3://cloudguard-sentinel-datalogs-surabhi/"
