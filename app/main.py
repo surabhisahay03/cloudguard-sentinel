@@ -19,9 +19,11 @@ from pydantic import BaseModel
 # --- CONFIGURATION ---
 # S3 & MLflow Config
 LOG_BUCKET_NAME = os.getenv("LOG_BUCKET_NAME", "cloudguard-sentinel-datalogs-surabhi")
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow.mlflow.svc.cluster.local:80")
+MLFLOW_TRACKING_URI = os.getenv(
+    "MLFLOW_TRACKING_URI", "http://mlflow-stack-cloudguard.mlflow.svc.cluster.local:5000"
+)
 MODEL_NAME = "machine-failure-prediction"
-MODEL_STAGE = "Production"
+MODEL_STAGE = "production"
 CHECK_INTERVAL_SECONDS = 300  # 5 minutes
 
 # Initialize Clients

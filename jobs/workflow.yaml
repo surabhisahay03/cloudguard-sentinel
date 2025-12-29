@@ -21,4 +21,4 @@ spec:
           value: "cloudguard-sentinel-datalogs-surabhi"
         - name: MLFLOW_TRACKING_URI
           # Format: http://<SERVICE_NAME>.<NAMESPACE>.svc.cluster.local:5000
-          value: "http://mlflow-cloudguard.mlflow.svc.cluster.local:5000"
+          value: "http://mlflow-stack-cloudguard.mlflow.svc.cluster.local:5000"
