@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+    name: {{ include "cloudguard.fullname" .}}
+    labels:
+        release: monitoring-stack
+        {{- include "cloudguard.labels" . | nindent 4 }}
+spec:
+    selector:
+        matchLabels:
+            {{- include "cloudguard.selectorLabels" . | nindent 6 }}
+    endpoints:
+        - port: http
+          path: /metrics
+          interval: 15s

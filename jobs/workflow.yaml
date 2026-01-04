@@ -1,24 +1,29 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow
+kind: CronWorkflow
 metadata:
-  generateName: cloudguard-retrain-
+  generateName: cloudguard-retrain-weekly
 spec:
-  serviceAccountName: workflow-runner
-  entrypoint: training-pipeline
-  templates:
-  - name: training-pipeline
-    steps:
-    - - name: train-model
-        template: trainer
+  schedule: "0 0 * * 0"
+  timezone: "America/New_York"
+  concurrrencyPolicy: "Replace"
+  startingDeadLineSeconds: 0
+  workflowSpec:
+    serviceAccountName: workflow-runner
+    entrypoint: training-pipeline
+    templates:
+    - name: training-pipeline
+      steps:
+      - - name: train-model
+          template: trainer
 
-  - name: trainer
-    container:
-      image: ghcr.io/surabhisahay03/cloudguard-trainer:latest
-      imagePullPolicy: Always
-      command: ["python", "train.py"]
-      env:
-        - name: LOG_BUCKET_NAME
-          value: "cloudguard-sentinel-datalogs-surabhi"
-        - name: MLFLOW_TRACKING_URI
-          # Format: http://<SERVICE_NAME>.<NAMESPACE>.svc.cluster.local:5000
-          value: "http://mlflow-stack-cloudguard.mlflow.svc.cluster.local:5000"
+    - name: trainer
+      container:
+        image: ghcr.io/surabhisahay03/cloudguard-trainer:latest
+        imagePullPolicy: Always
+        command: ["python", "train.py"]
+        env:
+          - name: LOG_BUCKET_NAME
+            value: "cloudguard-sentinel-datalogs-surabhi"
+          - name: MLFLOW_TRACKING_URI
+            # Format: http://<SERVICE_NAME>.<NAMESPACE>.svc.cluster.local:5000
+            value: "http://mlflow-stack-cloudguard.mlflow.svc.cluster.local:5000"
