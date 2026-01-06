@@ -59,12 +59,6 @@ service:
   port: 5000
   targetPort: 5000
 
-# Readiness and Liveness Probe Settings
-readinessProbe:
-  initialDelaySeconds: 300
-livenessProbe:
-  initialDelaySeconds: 300
-
 # Connect MLFLOW to PostgreSQL and S3
 # We construct the connection strings here using the sub-chart's DNS names.
 # The format is: postgresql://[user]:[password]@[release-name]-postgresql:5432/[db_name]
@@ -74,3 +68,9 @@ extraArgs:
   # Note: 'mlflow' is the release name we use in the helm command below
   backend-store-uri: "postgresql://mlflow:mlflow-password@mlflow-stack-postgresql:5432/mlflow"
   default-artifact-root: "s3://cloudguard-sentinel-datalogs-surabhi/"
+
+# Readiness and Liveness Probe Settings
+readinessProbe:
+  initialDelaySeconds: 300
+livenessProbe:
+  initialDelaySeconds: 300
