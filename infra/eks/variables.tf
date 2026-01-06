@@ -76,3 +76,9 @@ variable "prediction_log_bucket_name" {
   # Change this to a name that is unique to you.
   default     = "cloudguard-sentinel-datalogs-surabhi"
 }
+
+variable "eks_node_capacity_type" {
+  description = "The capacity type for the EKS node group (e.g. ON_DEMAND or SPOT)."
+  type = string
+  default = "ON_DEMAND"
+}
