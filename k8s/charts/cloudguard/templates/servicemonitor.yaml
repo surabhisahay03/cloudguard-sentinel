@@ -4,11 +4,11 @@ metadata:
     name: {{ include "cloudguard.fullname" .}}
     labels:
         release: monitoring-stack
-        {{- include "cloudguard.labels" . | nindent 4 }}
+        {{- include "cloudguard.labels" . | nindent 8 }}
 spec:
     selector:
         matchLabels:
-            {{- include "cloudguard.selectorLabels" . | nindent 6 }}
+            {{- include "cloudguard.selectorLabels" . | nindent 12 }}
     endpoints:
         - port: http
           path: /metrics
