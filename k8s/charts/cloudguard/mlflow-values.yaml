@@ -59,6 +59,12 @@ service:
   port: 5000
   targetPort: 5000
 
+# Readiness and Liveness Probe Settings
+readinessProbe:
+  initialDelaySeconds: 300
+livenessProbe:
+  initialDelaySeconds: 300
+
 # Connect MLFLOW to PostgreSQL and S3
 # We construct the connection strings here using the sub-chart's DNS names.
 # The format is: postgresql://[user]:[password]@[release-name]-postgresql:5432/[db_name]
