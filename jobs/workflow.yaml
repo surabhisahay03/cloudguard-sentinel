@@ -1,13 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
-kind: CronWorkflow
+# kind: CronWorkflow
+kind: Workflow
 metadata:
-  generateName: cloudguard-retrain-weekly
+  # generateName: cloudguard-retrain-weekly
+  generateName: manual-trainign-job-
+  namespace: argo
 spec:
-  schedule: "0 0 * * 0"
-  timezone: "America/New_York"
-  concurrrencyPolicy: "Replace"
-  startingDeadLineSeconds: 0
-  workflowSpec:
+  # schedule: "0 0 * * 0"
+  # timezone: "America/New_York"
+  # concurrrencyPolicy: "Replace"
+  # startingDeadLineSeconds: 0
+  # workflowSpec:
     serviceAccountName: workflow-runner
     entrypoint: training-pipeline
     templates:
