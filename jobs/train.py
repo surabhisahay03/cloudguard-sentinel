@@ -9,11 +9,10 @@ import xgboost as xgb
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-from app.main import MODEL_NAME
-
 # --- CONFIGURATION ---
 # 1. We read the MLflow URL from the environment (injected by K8s)
 #    Defaulting to the internal DNS we found earlier.
+MODEL_NAME = "machine-failure-prediction"
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow.mlflow.svc.cluster.local:80")
 EXPERIMENT_NAME = "machine-failure-prediction-v2"
 
@@ -173,7 +172,7 @@ def train():
             promote_model = True
 
         # Log the model
-        mlflow.sklearn.log_model(model, "model")
+        mv = mlflow.sklearn.log_model(model, "model")
 
         # Register and Promote if it passed the test
         if promote_model:
@@ -190,7 +189,7 @@ def train():
         # E. Save & Upload Model (Replaces your manual S3 upload)
         # This sends the model to s3://.../mlflow/...
         print("Uploading model to MLflow Artifact Store...")
-        mlflow.sklearn.log_model(model, "model")
+
         print("Model uploaded successfully!")
 
         # We also save locally just for backward compatibility if needed
