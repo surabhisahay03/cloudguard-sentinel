@@ -102,9 +102,13 @@ def train():
         mlflow.log_param("dataset_hash", data_hash)
 
         # Define Hyperparameters
-        n_estimators = 100
-        max_depth = 6
-        learning_rate = 0.1
+        # n_estimators = 100
+        # max_depth = 6
+        # learning_rate = 0.1
+
+        n_estimators = 1
+        max_depth = 1
+        learning_rate = 0.001
 
         # A. Log Parameters (So we remember them later)
         mlflow.log_param("n_estimators", n_estimators)
