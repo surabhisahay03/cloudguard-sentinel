@@ -1,49 +1,34 @@
-# 🛡️ CloudGuard Sentinel: Predictive Maintenance MLOps Platform
+# 🛡️ CloudGuard Sentinel: Industrial MLOps Platform
 
-![CI/CD](https://github.com/surabhisahay03/cloudguard-sentinel/actions/workflows/ci.yml/badge.svg)
-![Terraform](https://img.shields.io/badge/Infrastructure-Terraform-purple)
-![Kubernetes](https://img.shields.io/badge/Orchestration-EKS-blue)
-![GitOps](https://img.shields.io/badge/GitOps-ArgoCD-orange)
+**CloudGuard Sentinel** is an end-to-end MLOps platform designed for **Predictive Maintenance** in manufacturing. It predicts machine failures before they happen, preventing costly downtime.
 
-**CloudGuard Sentinel** is an end-to-end MLOps platform designed to predict industrial machine failures before they happen. It leverages a GitOps architecture to automate infrastructure, application deployment, and model training on AWS.
+Unlike typical "notebook" projects, this is a **production-grade platform** built with **GitOps** principles, **Infrastructure as Code**, and **Automated Model Governance**.
 
 ---
 
-## 🏗️ Architecture
-The platform follows a strict **GitOps** methodology, where the state of the infrastructure and application is defined entirely in code.
+## 🏗️ High-Level Architecture
 
-* **Infrastructure:** AWS EKS (Elastic Kubernetes Service) provisioned via **Terraform**.
-* **Continuous Deployment:** **Argo CD** synchronizes Kubernetes manifests with this repository.
-* **Model Training:** **Argo Workflows** orchestrates distributed training jobs on Kubernetes.
-* **Model Registry:** **MLflow** tracks experiments, metrics, and manages model artifacts (stored in S3).
-* **Serving:** FastAPI application serving real-time predictions (`XGBoost`).
+```mermaid
+graph LR
+    subgraph "CI / CD (GitHub)"
+        Dev[Developer] -->|Push Code| Repo[GitHub Repo]
+        Repo -->|Trigger| Action[GitHub Actions]
+        Action -->|Build & Push| Docker[GitHub Container Registry]
+    end
 
----
+    subgraph "The Cluster (EKS)"
+        direction TB
+        ArgoCD[Argo CD] -->|Sync State| Repo
+        ArgoCD -->|Deploy| App[FastAPI Inference Service]
+        ArgoCD -->|Deploy| Workflow[Argo Workflows]
+        
+        Workflow -->|1. Pull Data| S3[(S3 Data Lake)]
+        Workflow -->|2. Train Model| Trainer[Training Job]
+        Trainer -->|3. Log Metrics| MLflow[MLflow Registry]
+        
+        App -->|Load Production Model| MLflow
+        App -->|Predict| EndUser[Factory Sensor API]
+    end
 
-## 🚀 Tech Stack
-
-| Component | Tool | Description |
-| :--- | :--- | :--- |
-| **Cloud Provider** | AWS | EKS, S3, EC2, IAM, VPC |
-| **IaC** | Terraform | Automates cluster & network creation |
-| **Orchestration** | Kubernetes | Container management |
-| **GitOps** | Argo CD | Continuous Delivery & Sync |
-| **Workflow** | Argo Workflows | Training pipeline orchestration |
-| **ML Platform** | MLflow | Experiment tracking & Registry |
-| **Model** | XGBoost | Binary classification for failure prediction |
-| **App** | FastAPI | REST API for model inference |
-
----
-
-## 📂 Repository Structure
-
-```bash
-├── infra/
-│   ├── eks/             # Terraform code for AWS EKS Cluster
-│   └── gitops/          # Argo CD Application Manifests (The "Bridge")
-├── k8s/
-│   ├── charts/          # Helm Charts for App & MLflow
-│   └── values/          # Environment-specific configs
-├── jobs/                # Training Code & Argo Workflow definitions
-├── app/                 # FastAPI Source Code
-└── .github/workflows/   # CI Pipelines (Docker Build, Terraform Plan)
+    classDef tools fill:#f9f,stroke:#333,stroke-width:2px;
+    class ArgoCD,MLflow,Workflow tools;
