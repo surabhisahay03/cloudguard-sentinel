@@ -135,12 +135,11 @@ def train():
 
         try:
             # Get the current production model
-            prod_models = client.get_latest_versions(MODEL_NAME, stages=["production"])
+            prod_model = client.get_model_version_by_alias(MODEL_NAME, "production")
 
-            if prod_models:
-                current_prod_version = prod_models[0].version
-                current_prod_run_id = prod_models[0].run_id
-
+            if prod_model:
+                current_prod_version = prod_model.version
+                current_prod_run_id = prod_model.run_id
                 # Fetch the accuracy of the current production model
                 prod_metric = client.get_metric_history(current_prod_run_id, "accuracy")
                 current_accuracy = prod_metric[0].value if prod_metric else 0.0
@@ -171,29 +170,25 @@ def train():
             print("Promoting the new model to Production by default.")
             promote_model = True
 
-        # Log the model
+        print("Uploading model to MLflow...")
+        # Note: We must log the model BEFORE registering it
         mv = mlflow.sklearn.log_model(model, "model")
+
+        model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
+        mv = mlflow.register_model(model_uri, MODEL_NAME)
+        print(f"Registered Model Version: {mv.version}")
 
         # Register and Promote if it passed the test
         if promote_model:
-            model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
-            mv = mlflow.register_model(model_uri, MODEL_NAME)
+            print(f"Promoting v{mv.version} to @production alias...")
 
             # Transition to Production
-            client.transition_model_version_stage(
-                name=MODEL_NAME,
-                version=mv.version,
-                stage="production",
-                archive_existing_versions=True,
+            client.set_registered_model_alias(
+                name=MODEL_NAME, version=mv.version, alias="production"
             )
-        # E. Save & Upload Model (Replaces your manual S3 upload)
-        # This sends the model to s3://.../mlflow/...
-        print("Uploading model to MLflow Artifact Store...")
+            print("Success! Model is now @production")
 
-        print("Model uploaded successfully!")
-
-        # We also save locally just for backward compatibility if needed
-        # joblib.dump(model, "model_v2.joblib")
+        print("Training Complete.")
 
 
 if __name__ == "__main__":
