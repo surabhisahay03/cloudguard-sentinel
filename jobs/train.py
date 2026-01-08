@@ -1,6 +1,7 @@
+import hashlib
 import os
 
-import joblib
+# import joblib
 import mlflow
 import mlflow.xgboost
 import pandas as pd
@@ -8,11 +9,18 @@ import xgboost as xgb
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
+from app.main import MODEL_NAME
+
 # --- CONFIGURATION ---
 # 1. We read the MLflow URL from the environment (injected by K8s)
 #    Defaulting to the internal DNS we found earlier.
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow.mlflow.svc.cluster.local:80")
 EXPERIMENT_NAME = "machine-failure-prediction-v2"
+
+
+def calculate_data_hash(df):
+    """Calculate a simple hash of the dataframe for versioning purposes."""
+    return hashlib.sha256(pd.util.hash_pandas_object(df, index=True).values).hexdigest()
 
 
 def train():
@@ -35,11 +43,14 @@ def train():
 
     # 3. Load Data (Same as before)
     print("Loading data...")
-    # In a real scenario, you might download from S3 here.
+    # In a real scenario, we might download from S3 here.
     # For now, we use the local CSV baked into the Docker image.
     df = pd.read_csv("ai4i2020.csv")
 
-    # 4. Feature Engineering (Identical to your old code)
+    data_hash = calculate_data_hash(df)
+    print(f"Dataset Hash: {data_hash}")
+
+    # 4. Feature Engineering
     print("Performing feature engineering...")
     df = df.rename(
         columns={
@@ -88,6 +99,9 @@ def train():
     # 5. The Magic Block: Everything inside here is tracked
     with mlflow.start_run():
 
+        # Log the data hash
+        mlflow.log_param("dataset_hash", data_hash)
+
         # Define Hyperparameters
         n_estimators = 100
         max_depth = 6
@@ -111,12 +125,68 @@ def train():
 
         # C. Evaluate
         y_pred = model.predict(X_test)
-        accuracy = accuracy_score(y_test, y_pred)
-        print(f"Accuracy: {accuracy}")
+        new_accuracy = accuracy_score(y_test, y_pred)
+        print(f"Accuracy: {new_accuracy}")
 
         # D. Log Metrics (So we can see the graph)
-        mlflow.log_metric("accuracy", accuracy)
+        mlflow.log_metric("accuracy", new_accuracy)
 
+        client = mlflow.MLflowClient()
+        promote_model = False
+
+        try:
+            # Get hte current production model
+            prod_models = client.get_latest_versions(MODEL_NAME, stages=["production"])
+
+            if prod_models:
+                current_prod_version = prod_models[0].version
+                current_prod_run_id = prod_models[0].run_id
+
+                # Fetch the accuracy of the current production model
+                prod_metric = client.get_metric_history(current_prod_run_id, "accuracy")
+                current_accuracy = prod_metric[0].value if prod_metric else 0.0
+
+                print(
+                    f"Current Production Model Version: {current_prod_version} with Accuracy: \
+                    {current_accuracy}"
+                )
+
+                # Compare accuracies
+                if new_accuracy >= current_accuracy:
+                    print(
+                        "New model outperforms or matches the current production model."
+                        " Promoting to Production."
+                    )
+                    promote_model = True
+                else:
+                    print(
+                        "New model does not outperform the current production model. Not promoting."
+                    )
+            else:
+                print(
+                    "No production model found. Promoting the new model to Production by default."
+                )
+                promote_model = True
+        except Exception as e:
+            print(f"Error checking current production model: {e}")
+            print("Promoting the new model to Production by default.")
+            promote_model = True
+
+        # Log the model
+        mlflow.sklearn.log_model(model, "model")
+
+        # Register and Promote if it passed the test
+        if promote_model:
+            model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
+            mv = mlflow.register_model(model_uri, MODEL_NAME)
+
+            # Transition to Production
+            client.transition_model_version_stage(
+                name=MODEL_NAME,
+                version=mv.version,
+                stage="production",
+                archive_existing_versions=True,
+            )
         # E. Save & Upload Model (Replaces your manual S3 upload)
         # This sends the model to s3://.../mlflow/...
         print("Uploading model to MLflow Artifact Store...")
@@ -124,7 +194,7 @@ def train():
         print("Model uploaded successfully!")
 
         # We also save locally just for backward compatibility if needed
-        joblib.dump(model, "model_v2.joblib")
+        # joblib.dump(model, "model_v2.joblib")
 
 
 if __name__ == "__main__":
