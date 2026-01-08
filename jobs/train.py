@@ -130,11 +130,11 @@ def train():
         # D. Log Metrics (So we can see the graph)
         mlflow.log_metric("accuracy", new_accuracy)
 
-        client = mlflow.MLflowClient()
+        client = mlflow.MlflowClient()
         promote_model = False
 
         try:
-            # Get hte current production model
+            # Get the current production model
             prod_models = client.get_latest_versions(MODEL_NAME, stages=["production"])
 
             if prod_models:
