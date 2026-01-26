@@ -61,7 +61,6 @@ data "aws_iam_policy_document" "app_pod_s3_policy_doc" {
       "s3:DeleteObject"        # Allow deleting experiments from UI
     ]
     resources = [
-      # Keep BOTH of these lines.
       # Line 1 allows "ListBucket" (on the bucket itself)
       aws_s3_bucket.prediction_logs.arn,
 
@@ -86,10 +85,10 @@ module "eks" {
   cluster_endpoint_public_access  = var.cluster_endpoint_public_access
   cluster_endpoint_private_access = var.cluster_endpoint_private_access
 
-  # --- Grant your IAM user cluster-admin automatically ---
+  # --- Grant the IAM user cluster-admin automatically ---
   access_entries = {
     admin = {
-      principal_arn = var.cluster_admin_arn # <-- Already a variable (good!)
+      principal_arn = var.cluster_admin_arn 
       policy_associations = {
         admin = {
           # This ARN is a fixed AWS policy, so it's fine to leave hardcoded
@@ -102,18 +101,17 @@ module "eks" {
 
   eks_managed_node_groups = {
     default = {
-      instance_types = [var.eks_node_instance_type] # <-- Already a variable (good!)
+      instance_types = [var.eks_node_instance_type] 
 
       capacity_type = var.eks_node_capacity_type
 
-      # This is a better, more flexible way to size your nodes
       min_size     = var.eks_node_min_size
       max_size     = var.eks_node_max_size
       desired_size = var.eks_node_desired_size
 
-      # This grants your Kubernetes worker nodes the AWS Permission to talk to the storage service (EBS).
+      # This grants Kubernetes worker nodes the AWS Permission to talk to the storage service (EBS).
       # Even if the software knows how to create a hard drive, AWS will reject the request with "Access Denied"
-      # because your node doesn't have the authority to create volumes on your AWS account.
+      # because the node doesn't have the authority to create volumes on your AWS account.
       iam_role_additional_policies = {
       AmazonEBSCSIDriverPolicy = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
       }
@@ -121,7 +119,7 @@ module "eks" {
 
   }
 
-  # This installs the actual software (the CSI Driver) into your cluster. \
+  # This installs the actual software (the CSI Driver) into the cluster. \
   # This software runs as a set of pods (usually in the kube-system namespace) that listens for storage requests.
   cluster_addons = {
     aws-ebs-csi-driver = {
@@ -172,8 +170,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "prediction_logs_s
 resource "aws_iam_role" "app_pod_role" {
   name = "cloudguard-app-pod-role"
 
-  # TRUST POLICY FIX: We updated this to allow a LIST of Service Accounts.
-  # This acts as the "Bouncer" letting two different VIPs into the club.
+  # TRUST POLICY FIX: Updated this to allow a LIST of Service Accounts.
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -185,7 +182,7 @@ resource "aws_iam_role" "app_pod_role" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            # Note the square brackets [] below. This allows multiple Service Accounts.
+            # This allows multiple Service Accounts.
             "${module.eks.oidc_provider}:sub" = [
               "system:serviceaccount:cloudguard-system:cloudguard-sa",              # 1. The FastAPI App
               "system:serviceaccount:argo:workflow-runner",               # 2. The Argo Workflow (Trainer)
