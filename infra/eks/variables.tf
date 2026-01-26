@@ -73,7 +73,6 @@ variable "prediction_log_bucket_name" {
   description = "The name of the S3 bucket to store prediction logs."
   type        = string
   # IMPORTANT: S3 bucket names must be globally unique.
-  # Change this to a name that is unique to you.
   default     = "cloudguard-sentinel-datalogs-surabhi"
 }
 
