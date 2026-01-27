@@ -9,29 +9,42 @@ Unlike typical "notebook" projects, this is a **production-grade platform** buil
 ## 🏗️ High-Level Architecture
 
 ```mermaid
-graph LR
-    subgraph "CI / CD (GitHub)"
-        Dev[Developer] -->|Push Code| Repo[GitHub Repo]
-        Repo -->|Trigger| Action[GitHub Actions]
-        Action -->|Build & Push| Docker[GitHub Container Registry]
+graph TD
+    subgraph CI_CD [CI / CD - GitHub]
+        Dev[Developer] -->|Push Code| Repo[(GitHub Repo)]
+        Repo -->|Trigger| GHA[GitHub Actions]
+        GHA -->|Build & Push| GCR[GitHub Container Registry]
     end
 
-    subgraph "The Cluster (EKS)"
-        direction TB
-        ArgoCD[Argo CD] -->|Sync State| Repo
-        ArgoCD -->|Deploy| App[FastAPI Inference Service]
-        ArgoCD -->|Deploy| Workflow[Argo Workflows]
-        
-        Workflow -->|1. Pull Data| S3[(S3 Data Lake)]
-        Workflow -->|2. Train Model| Trainer[Training Job]
-        Trainer -->|3. Log Metrics| MLflow[MLflow Registry]
-        
-        App -->|Load Production Model| MLflow
-        App -->|Predict| EndUser[Factory Sensor API]
+    subgraph EKS_Cluster [The Cluster - EKS]
+        ACD[Argo CD]
+        AWC[Argo Workflows Controller]
+        MLF[MLflow Registry]
+        FAPI[FastAPI Inference Service]
+        S3[(S3 Data Lake)]
+        PROM[Prometheus]
     end
 
-    classDef tools fill:#f9f,stroke:#333,stroke-width:2px;
-    class ArgoCD,MLflow,Workflow tools;
+    %% Argo CD Syncs
+    Repo -.->|Sync State| ACD
+    ACD -->|Sync App State| FAPI
+    ACD -->|Sync App State| MLF
+    ACD -->|Sync App State| PROM
+    ACD -->|Manages Controller| AWC
+
+    %% ML Lifecycle
+    AWC -->|1. Pull Data| S3
+    AWC -->|2. Train Model| Train[Training Job]
+    Train -->|3. Log Metrics/Model| MLF
+    
+    %% Serving Lifecycle
+    FAPI -->|Load Production Model| MLF
+    FAPI -->|Predict| Sensor[Factory Sensor API]
+
+    %% Styles
+    style ACD fill:#f9f,stroke:#333,stroke-width:2px
+    style AWC fill:#f9f,stroke:#333,stroke-width:2px
+    style MLF fill:#f9f,stroke:#333,stroke-width:2px
 ```
 
 ### The "Senior" Stack
