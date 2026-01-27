@@ -9,40 +9,49 @@ Unlike typical "notebook" projects, this is a **production-grade platform** buil
 ## 🏗️ High-Level Architecture
 
 ```mermaid
-graph TD
-    subgraph CI_CD [CI / CD - GitHub]
-        Dev[Developer] -->|Push Code| Repo[(GitHub Repo)]
-        Repo -->|Trigger| GHA[GitHub Actions]
-        GHA -->|Build & Push| GCR[GitHub Container Registry]
-    end
+flowchart LR
+  %% =========================
+  %% CloudGuard Sentinel - MLOps on EKS
+  %% =========================
 
-    subgraph EKS_Cluster [The Cluster - EKS]
-        ACD[Argo CD]
-        AWC[Argo Workflows Controller]
-        MLF[MLflow Registry]
-        FAPI[FastAPI Inference Service]
-        S3[(S3 Data Lake)]
-    end
+  subgraph EKS["The Cluster (EKS)"]
+    direction LR
 
-    %% Argo CD Sync Flows
-    Repo -.->|Sync State| ACD
-    ACD -->|Sync App State| AWC
-    ACD -->|Sync App State| FAPI
-    ACD -->|Sync App State| MLF
+    ArgoWF["Argo Workflows Controller\n(Workflow Definitions)"]
+    TrainJob["Training Job"]
+    S3["S3 Data Lake"]
+    FastAPI["FastAPI Inference Service"]
+    MLflow["MLflow Registry"]
+    FactoryAPI["Factory Sensor API"]
 
-    %% ML Lifecycle / Argo Workflows
-    AWC -->|1. Pull Data| S3
-    AWC -->|2. Train Model| Train[Training Job]
-    Train -->|3. Log Metrics/Model| MLF
-    
-    %% Serving Lifecycle
-    FAPI -->|Load Production Model| MLF
-    FAPI -->|Predict| Sensor[Factory Sensor API]
+    %% Training flow
+    ArgoWF -- "1. Pull Data" --> S3
+    ArgoWF -- "2. Train Model" --> TrainJob
+    TrainJob -- "3. Log Metrics/Model" --> MLflow
 
-    %% Styling to match the provided image colors
-    style ACD fill:#d488e0,stroke:#333,stroke-width:2px
-    style AWC fill:#d488e0,stroke:#333,stroke-width:2px
-    style MLF fill:#d488e0,stroke:#333,stroke-width:2px
+    %% Inference flow
+    FastAPI -- "Load Production Model" --> MLflow
+    FastAPI -- "Predict" --> FactoryAPI
+  end
+
+  %% GitOps
+  ArgoCD["Argo CD"]
+  ArgoCD -- "Sync App State" --> FastAPI
+  ArgoCD -- "Sync App State" --> ArgoWF
+  ArgoCD -- "Sync State" --> EKS
+
+  %% CI/CD
+  subgraph CICD["CI / CD (GitHub)"]
+    direction LR
+    Dev["Developer"]
+    Repo["GitHub Repo"]
+    GHA["GitHub Actions"]
+    GHCR["GitHub Container Registry"]
+
+    Dev -- "Push Code" --> Repo
+    Repo -- "Trigger" --> GHA
+    GHA -- "Build & Push" --> GHCR
+  end
 ```
 
 ### The "Senior" Stack
