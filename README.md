@@ -22,17 +22,15 @@ graph TD
         MLF[MLflow Registry]
         FAPI[FastAPI Inference Service]
         S3[(S3 Data Lake)]
-        PROM[Prometheus]
     end
 
-    %% Argo CD Syncs
+    %% Argo CD Sync Flows
     Repo -.->|Sync State| ACD
+    ACD -->|Sync App State| AWC
     ACD -->|Sync App State| FAPI
     ACD -->|Sync App State| MLF
-    ACD -->|Sync App State| PROM
-    ACD -->|Manages Controller| AWC
 
-    %% ML Lifecycle
+    %% ML Lifecycle / Argo Workflows
     AWC -->|1. Pull Data| S3
     AWC -->|2. Train Model| Train[Training Job]
     Train -->|3. Log Metrics/Model| MLF
@@ -41,10 +39,10 @@ graph TD
     FAPI -->|Load Production Model| MLF
     FAPI -->|Predict| Sensor[Factory Sensor API]
 
-    %% Styles
-    style ACD fill:#f9f,stroke:#333,stroke-width:2px
-    style AWC fill:#f9f,stroke:#333,stroke-width:2px
-    style MLF fill:#f9f,stroke:#333,stroke-width:2px
+    %% Styling to match the provided image colors
+    style ACD fill:#d488e0,stroke:#333,stroke-width:2px
+    style AWC fill:#d488e0,stroke:#333,stroke-width:2px
+    style MLF fill:#d488e0,stroke:#333,stroke-width:2px
 ```
 
 ### The "Senior" Stack
