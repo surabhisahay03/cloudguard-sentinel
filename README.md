@@ -9,76 +9,29 @@ Unlike typical "notebook" projects, this is a **production-grade platform** buil
 ## 🏗️ High-Level Architecture
 
 ```mermaid
-flowchart LR
-  %% =========================
-  %% EXACT layout intent: Top = EKS cluster, Bottom = CI/CD (GitHub),
-  %% with Argo CD on the left syncing into the cluster.
-  %% =========================
+graph LR
+    subgraph "CI / CD (GitHub)"
+        Dev[Developer] -->|Push Code| Repo[GitHub Repo]
+        Repo -->|Trigger| Action[GitHub Actions]
+        Action -->|Build & Push| Docker[GitHub Container Registry]
+    end
 
-  %% -------- TOP: EKS CLUSTER --------
-  subgraph CLUSTER["The Cluster (EKS)"]
-    direction LR
+    subgraph "The Cluster (EKS)"
+        direction TB
+        ArgoCD[Argo CD] -->|Sync State| Repo
+        ArgoCD -->|Deploy| App[FastAPI Inference Service]
+        ArgoCD -->|Deploy| Workflow[Argo Workflows]
+        
+        Workflow -->|1. Pull Data| S3[(S3 Data Lake)]
+        Workflow -->|2. Train Model| Trainer[Training Job]
+        Trainer -->|3. Log Metrics| MLflow[MLflow Registry]
+        
+        App -->|Load Production Model| MLflow
+        App -->|Predict| EndUser[Factory Sensor API]
+    end
 
-    ArgoWF["Argo Workflows Controller<br/>(Workflow Definitions)"]
-    TrainJob["Training Job"]
-    S3["S3 Data Lake"]
-    MLflow["MLflow Registry"]
-    FastAPI["FastAPI Inference Service"]
-    FactoryAPI["Factory Sensor API"]
-
-    %% Workflow steps (match labels in your diagram)
-    ArgoWF -- "1. Pull Data" --> S3
-    ArgoWF -- "2. Train Model" --> TrainJob
-    TrainJob -- "3. Log Metrics/Model" --> MLflow
-
-    %% Thick purple arrow in your diagram: FastAPI loads production model from MLflow
-    FastAPI -- "Load Production Model" --> MLflow
-
-    %% Prediction call
-    FastAPI -- "Predict" --> FactoryAPI
-  end
-
-  %% Argo CD sits outside/left of the cluster in your diagram
-  ArgoCD["Argo CD"]
-
-  %% Two sync arrows into the cluster (as shown)
-  ArgoCD -- "Sync App State" --> ArgoWF
-  ArgoCD -- "Sync App State" --> FastAPI
-
-  %% -------- BOTTOM: CI/CD --------
-  subgraph CICD["CI / CD (GitHub)"]
-    direction LR
-    Dev["Developer"]
-    Repo["GitHub Repo"]
-    GHA["GitHub Actions"]
-    GHCR["GitHub Container Registry"]
-
-    Dev -- "Push Code" --> Repo
-    Repo -- "Trigger" --> GHA
-    GHA -- "Build & Push" --> GHCR
-  end
-
-  %% In your image, Argo CD also syncs state from GitHub repo (GitOps source of truth)
-  ArgoCD -- "Sync State" --> Repo
-
-  %% Optional: indicate that the cluster pulls the container image (often implicit)
-  %% (Keep commented if you want it visually identical without extra arrows.)
-  %% GHCR -. "Image Pull" .-> FastAPI
-
-
-  %% -------- Styling to resemble screenshot (dark nodes + purple GitOps components) --------
-  classDef dark fill:#111,stroke:#777,color:#fff,stroke-width:1px;
-  classDef purple fill:#c78cff,stroke:#c78cff,color:#111,stroke-width:1px;
-  classDef store fill:#111,stroke:#aaa,color:#fff,stroke-width:1px;
-
-  class TrainJob,FastAPI,FactoryAPI,Dev,Repo,GHA,GHCR dark;
-  class S3,MLflow store;
-  class ArgoCD,ArgoWF purple;
-
-  %% Thicker “purple” arrows for GitOps sync + model loading (as in screenshot)
-  linkStyle 4 stroke:#c78cff,stroke-width:4px;  %% ArgoCD -> ArgoWF
-  linkStyle 5 stroke:#c78cff,stroke-width:4px;  %% ArgoCD -> FastAPI
-  linkStyle 3 stroke:#c78cff,stroke-width:4px;  %% FastAPI -> MLflow (Load Production Model)
+    classDef tools fill:#f9f,stroke:#333,stroke-width:2px;
+    class ArgoCD,MLflow,Workflow tools;
 ```
 
 ### The "Senior" Stack
