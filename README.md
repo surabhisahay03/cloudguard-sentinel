@@ -34,6 +34,53 @@ graph LR
     class ArgoCD,MLflow,Workflow tools;
 ```
 
+graph TD
+    subgraph DevZone ["Developer Zone"]
+        Workstation["Developer Workstation<br/>(VS Code / Local Training)"]
+        GitHub["Source Code<br/>(GitHub Repo)"]
+    end
+
+    subgraph CI_Pipeline ["CI/CD Pipeline (GitHub Actions)"]
+        direction TB
+        CI["CI Pipeline<br/>(Build, Test, Dockerize)"]
+        Registry["Container Registry<br/>(GHCR / ECR)"]
+    end
+
+    subgraph Cluster ["EKS Cluster (Production)"]
+        direction TB
+        ArgoCD["GitOps Controller<br/>(ArgoCD)"]
+        
+        subgraph MLOps_Runtime ["MLOps Stack"]
+            Serving["Model Serving Pod<br/>(FastAPI)"]
+            MLflow["MLflow Pod<br/>(Model Registry)"]
+            Workflows["Argo Workflows<br/>(Training Jobs)"]
+        end
+    end
+
+    %% Developer Actions
+    Workstation -->|git push| GitHub
+    Workstation -.->|Log Metrics & Register| MLflow
+
+    %% CI Flow
+    GitHub -->|Trigger| CI
+    CI -->|Push Image| Registry
+
+    %% CD Flow
+    ArgoCD -->|1. Watch Manifests| GitHub
+    ArgoCD -->|2. Sync / Deploy| Serving
+
+    %% MLOps Data Flow
+    MLflow -->|Pull Production Model| Serving
+    Workflows -->|Train & Promote| MLflow
+
+    classDef dev fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef pipeline fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef cluster fill:#f3e5f5,stroke:#4a148c,stroke-width:2px;
+    
+    class Workstation,GitHub dev;
+    class CI,Registry pipeline;
+    class ArgoCD,Serving,MLflow,Workflows cluster;
+
 ### The "Senior" Stack
 
 | Component | Tool | Why I Chose It |
