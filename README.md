@@ -33,7 +33,7 @@ graph LR
     classDef tools fill:#f9f,stroke:#333,stroke-width:2px;
     class ArgoCD,MLflow,Workflow tools;
 ```
-
+```mermaid
 graph TD
     subgraph DevZone ["Developer Zone"]
         Workstation["Developer Workstation<br/>(VS Code / Local Training)"]
@@ -80,7 +80,7 @@ graph TD
     class Workstation,GitHub dev;
     class CI,Registry pipeline;
     class ArgoCD,Serving,MLflow,Workflows cluster;
-
+```
 ### The "Senior" Stack
 
 | Component | Tool | Why I Chose It |
