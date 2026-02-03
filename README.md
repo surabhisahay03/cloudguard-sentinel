@@ -9,78 +9,42 @@ Unlike typical "notebook" projects, this is a **production-grade platform** buil
 ## 🏗️ High-Level Architecture
 
 ```mermaid
-graph LR
-    subgraph "CI / CD (GitHub)"
-        Dev[Developer] -->|Push Code| Repo[GitHub Repo]
-        Repo -->|Trigger| Action[GitHub Actions]
-        Action -->|Build & Push| Docker[GitHub Container Registry]
+flowchart TB
+    subgraph Dev["👩‍💻 Developer"]
+        Push["git push"]
     end
 
-    subgraph "The Cluster (EKS)"
-        direction TB
-        ArgoCD[Argo CD] -->|Sync State| Repo
-        ArgoCD -->|Deploy| App[FastAPI Inference Service]
-        ArgoCD -->|Deploy| Workflow[Argo Workflows]
-        
-        Workflow -->|1. Pull Data| S3[(S3 Data Lake)]
-        Workflow -->|2. Train Model| Trainer[Training Job]
-        Trainer -->|3. Log Metrics| MLflow[MLflow Registry]
-        
-        App -->|Load Production Model| MLflow
-        App -->|Predict| EndUser[Factory Sensor API]
+    subgraph CI["⚙️ CI/CD"]
+        GHA["GitHub Actions<br/>Build & Test"]
+        GHCR["📦 Container<br/>Registry"]
     end
 
-    classDef tools fill:#f9f,stroke:#333,stroke-width:2px;
-    class ArgoCD,MLflow,Workflow tools;
-```
-```mermaid
-graph TD
-    subgraph DevZone ["Developer Zone"]
-        Workstation["Developer Workstation<br/>(VS Code / Local Training)"]
-        GitHub["Source Code<br/>(GitHub Repo)"]
+    subgraph GitOps["🔄 GitOps"]
+        ArgoCD["Argo CD<br/>Auto-Sync"]
     end
 
-    subgraph CI_Pipeline ["CI/CD Pipeline (GitHub Actions)"]
-        direction TB
-        CI["CI Pipeline<br/>(Build, Test, Dockerize)"]
-        Registry["Container Registry<br/>(GHCR / ECR)"]
+    subgraph EKS["☸️ AWS EKS Cluster"]
+        API["🚀 FastAPI<br/>Inference API"]
+        MLflow["📊 MLflow<br/>Model Registry"]
+        Training["⚡ Argo Workflows<br/>ML Training"]
+        Monitor["📈 Prometheus<br/>+ Grafana"]
     end
 
-    subgraph Cluster ["EKS Cluster (Production)"]
-        direction TB
-        ArgoCD["GitOps Controller<br/>(ArgoCD)"]
-        
-        subgraph MLOps_Runtime ["MLOps Stack"]
-            Serving["Model Serving Pod<br/>(FastAPI)"]
-            MLflow["MLflow Pod<br/>(Model Registry)"]
-            Workflows["Argo Workflows<br/>(Training Jobs)"]
-        end
+    subgraph Storage["💾 Storage"]
+        S3[("🪣 S3<br/>Models & Logs")]
+        PG[("🐘 PostgreSQL<br/>Metadata")]
     end
 
-    %% Developer Actions
-    Workstation -->|git push| GitHub
-    Workstation -.->|Log Metrics & Register| MLflow
-
-    %% CI Flow
-    GitHub -->|Trigger| CI
-    CI -->|Push Image| Registry
-
-    %% CD Flow
-    ArgoCD -->|1. Watch Manifests| GitHub
-    ArgoCD -->|2. Sync / Deploy| Serving
-
-    %% MLOps Data Flow
-    MLflow -->|Pull Production Model| Serving
-    Workflows -->|Train & Promote| MLflow
-
-    classDef dev fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    classDef pipeline fill:#fff3e0,stroke:#e65100,stroke-width:2px;
-    classDef cluster fill:#f3e5f5,stroke:#4a148c,stroke-width:2px;
+    Push --> GHA --> GHCR --> ArgoCD --> EKS
     
-    class Workstation,GitHub dev;
-    class CI,Registry pipeline;
-    class ArgoCD,Serving,MLflow,Workflows cluster;
+    Training -->|"Train & Log"| MLflow
+    MLflow <--> S3
+    MLflow <--> PG
+    API <-->|"Load @production"| MLflow
+    API -->|"Predictions"| S3
+    Monitor -.->|"Metrics"| API
 ```
+
 ### The "Senior" Stack
 
 | Component | Tool | Why I Chose It |
