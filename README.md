@@ -9,29 +9,40 @@ Unlike typical "notebook" projects, this is a **production-grade platform** buil
 ## 🏗️ High-Level Architecture
 
 ```mermaid
-graph LR
-    subgraph "CI / CD (GitHub)"
-        Dev[Developer] -->|Push Code| Repo[GitHub Repo]
-        Repo -->|Trigger| Action[GitHub Actions]
-        Action -->|Build & Push| Docker[GitHub Container Registry]
+flowchart TB
+    subgraph Dev["👩‍💻 Developer"]
+        Push["git push"]
     end
 
-    subgraph "The Cluster (EKS)"
-        direction TB
-        ArgoCD[Argo CD] -->|Sync State| Repo
-        ArgoCD -->|Deploy| App[FastAPI Inference Service]
-        ArgoCD -->|Deploy| Workflow[Argo Workflows]
-        
-        Workflow -->|1. Pull Data| S3[(S3 Data Lake)]
-        Workflow -->|2. Train Model| Trainer[Training Job]
-        Trainer -->|3. Log Metrics| MLflow[MLflow Registry]
-        
-        App -->|Load Production Model| MLflow
-        App -->|Predict| EndUser[Factory Sensor API]
+    subgraph CI["⚙️ CI/CD"]
+        GHA["GitHub Actions<br/>Build & Test"]
+        GHCR["📦 Container<br/>Registry"]
     end
 
-    classDef tools fill:#f9f,stroke:#333,stroke-width:2px;
-    class ArgoCD,MLflow,Workflow tools;
+    subgraph GitOps["🔄 GitOps"]
+        ArgoCD["Argo CD<br/>Auto-Sync"]
+    end
+
+    subgraph EKS["☸️ AWS EKS Cluster"]
+        API["🚀 FastAPI<br/>Inference API"]
+        MLflow["📊 MLflow<br/>Model Registry"]
+        Training["⚡ Argo Workflows<br/>ML Training"]
+        Monitor["📈 Prometheus<br/>+ Grafana"]
+    end
+
+    subgraph Storage["💾 Storage"]
+        S3[("🪣 S3<br/>Models & Logs")]
+        PG[("🐘 PostgreSQL<br/>Metadata")]
+    end
+
+    Push --> GHA --> GHCR --> ArgoCD --> EKS
+    
+    Training -->|"Train & Log"| MLflow
+    MLflow <--> S3
+    MLflow <--> PG
+    API <-->|"Load @production"| MLflow
+    API -->|"Predictions"| S3
+    Monitor -.->|"Metrics"| API
 ```
 
 ### The "Senior" Stack
