@@ -15,7 +15,7 @@ ingress:
   class: nginx
   annotations: {}
   hosts:
-    - host: buildwithsurabhi.com
+    - host: api.buildwithsurabhi.com
       paths:
         - path: /
           pathType: Prefix
