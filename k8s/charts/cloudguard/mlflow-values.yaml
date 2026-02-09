@@ -13,6 +13,15 @@ serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: "arn:aws:iam::447646782725:role/cloudguard-app-pod-role"
 
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: mlflow.buildwithsurabhi.com # <--- NEW SUBDOMAIN
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+
 # 3. PostgreSQL Settings
 postgresql:
   enabled: true
@@ -74,3 +83,6 @@ readinessProbe:
   initialDelaySeconds: 300
 livenessProbe:
   initialDelaySeconds: 300
+
+ingress:
+  enabled: false
