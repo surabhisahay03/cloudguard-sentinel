@@ -104,8 +104,80 @@ kubectl create -f jobs/workflow.yaml
 
 ---
 
-## 🔮 Future Roadmap (Production Readiness)
-If this were running in a real factory, I would add:
-1.  **Drift Detection:** Compare live inference data in S3 against training distributions.
-2.  **Scalability:** Enable **Cluster Autoscaler** to handle training spikes (currently removed monitoring stack to optimize for cost/demo constraints).
-3.  **A/B Testing:** Use **Argo Rollouts** to send 5% of traffic to the new model before full promotion.
+## 🔧 Recent Enhancements
+
+**Implemented (In Progress):**
+- 🔄 **Trivy Container Scanning** - Added to CI pipeline to scan for vulnerabilities before image push
+- 🔄 **Code Quality Gates** - Flake8 linting and pytest unit tests in GitHub Actions
+- 🔄 **Custom Domain Routing** - ALB Ingress Controller for production-like networking
+- 🔄 **Comprehensive Code Review** - Refactoring based on security and best practices feedback
+
+---
+
+## 🚀 Future Enhancements
+
+### 🔒 Security & Compliance
+*Transitioning from lab to enterprise production*
+
+- [ ] **AWS SecurityHub Integration**
+  - Aggregate findings from GuardDuty (threat detection) and Inspector (vulnerability scanning)
+  - Automate compliance checks against CIS AWS Foundations Benchmark
+  - EventBridge automation: Critical findings → Slack alerts, auto-remediation via Lambda
+
+- [ ] **Network Segmentation**
+  - Implement Kubernetes Network Policies to restrict pod-to-pod communication
+  - Example: MLflow pods can only communicate with PostgreSQL and S3, not other services
+
+- [ ] **Secrets Management**
+  - Migrate from Kubernetes Secrets to AWS Secrets Manager + External Secrets Operator
+  - Enable automatic secret rotation for database credentials
+
+- [ ] **Audit Logging**
+  - Enable AWS CloudTrail for API call auditing (who accessed what, when)
+  - Centralize logs in CloudWatch with retention policies
+
+---
+
+### 🏗️ Production Readiness
+*High availability and operational excellence*
+
+- [ ] **Database High Availability**
+  - Migrate PostgreSQL from Kubernetes pod to Amazon RDS Multi-AZ
+  - Enable automated backups and point-in-time recovery
+
+- [ ] **Encryption Key Management**
+  - Upgrade from S3 SSE (AWS-managed keys) to SSE-KMS (customer-managed keys)
+  - Implement key rotation policies for compliance
+
+- [ ] **Observability Stack**
+  - Deploy Prometheus + Grafana for metrics visualization
+  - Track: model inference latency, prediction accuracy drift, pod resource usage, S3 request rates
+
+- [ ] **Disaster Recovery**
+  - Document RTO/RPO requirements
+  - Implement cross-region S3 replication for critical ML artifacts
+  - Test cluster restore from Terraform state
+
+- [ ] **Scalability**
+  - Enable Cluster Autoscaler to handle training spikes
+  - Implement Horizontal Pod Autoscaling (HPA) for inference workloads
+
+---
+
+### 🤖 MLOps Maturity
+*Advanced model lifecycle management*
+
+- [ ] **Model Monitoring & Drift Detection**
+  - Compare live inference data in S3 against training distributions
+  - Alert when data drift exceeds threshold (statistical tests: KS, PSI)
+
+- [ ] **A/B Testing**
+  - Use Argo Rollouts to send 5% of traffic to new model before full promotion
+  - Implement canary deployments with automated rollback on performance degradation
+
+- [ ] **CI/CD for ML Models**
+  - Automate model retraining pipeline triggered by data drift
+  - Version control for datasets (DVC) and models (MLflow Model Registry)
+
+- [ ] **Feature Store**
+  - Centralize feature engineering logic to ensure consistency between training and inference
