@@ -36,7 +36,7 @@ postgresql:
   # RAMDISK MODE (optional, for better performance)
   primary:
     persistence:
-      enabled: true
+      enabled: false
       size: 8Gi
       storageClass: "gp2"
 
