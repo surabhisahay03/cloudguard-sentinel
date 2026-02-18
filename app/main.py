@@ -30,29 +30,23 @@ CHECK_INTERVAL_SECONDS = 300  # 5 minutes
 PREDICTION_CONFIDENCE = Histogram(
     "cloudguard_prediction_confidence",
     "Distribution of prediction confidence scores",
-    buckets=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    buckets=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
 )
 HIGH_RISK_PREDICTIONS = Counter(
-    "cloudguard_high_risk_predictions_total",
-    "Predictions where failure risk >= 0.5"
+    "cloudguard_high_risk_predictions_total", "Predictions where failure risk >= 0.5"
 )
-MODEL_VERSION = Gauge(
-    "cloudguard_model_version",
-    "Current active model version number"
-)
+MODEL_VERSION = Gauge("cloudguard_model_version", "Current active model version number")
 
 # --- New: Operational Reliability Metrics ---
 S3_LOG_FAILURES = Counter(
-    "cloudguard_s3_log_failures_total",
-    "Number of failed S3 prediction log writes"
+    "cloudguard_s3_log_failures_total", "Number of failed S3 prediction log writes"
 )
 MLFLOW_REFRESH_FAILURES = Counter(
-    "cloudguard_mlflow_refresh_failures_total",
-    "Number of failed MLflow model refresh attempts"
+    "cloudguard_mlflow_refresh_failures_total", "Number of failed MLflow model refresh attempts"
 )
 LAST_SUCCESSFUL_REFRESH_TIMESTAMP = Gauge(
     "cloudguard_last_model_refresh_timestamp_seconds",
-    "Unix timestamp of last successful model refresh from MLflow"
+    "Unix timestamp of last successful model refresh from MLflow",
 )
 
 # Initialize Clients
@@ -165,13 +159,13 @@ def load_latest_model():
         model_state["feature_list"] = load_feature_list()
 
         MODEL_UPDATES_TOTAL.inc()
-        MODEL_VERSION.set(int(latest_version))        # NEW
+        MODEL_VERSION.set(int(latest_version))  # NEW
         LAST_SUCCESSFUL_REFRESH_TIMESTAMP.set(time.time())  # NEW
         logger.info(f"✅ Successfully switched to Model v{latest_version}")
 
     except Exception as e:
         logger.error(f"❌ Failed to refresh model from MLflow: {e}")
-        MLFLOW_REFRESH_FAILURES.inc()                 # NEW
+        MLFLOW_REFRESH_FAILURES.inc()  # NEW
 
 
 def background_model_refresher():
@@ -248,10 +242,10 @@ def predict(tel: Telemetry):
 
         PREDICTIONS_TOTAL.inc()
         LAST_FAILURE_RISK.set(proba)
-        
+
         PREDICTION_CONFIDENCE.observe(proba)  # NEW: Track confidence distribution
         if proba >= 0.5:
-            HIGH_RISK_PREDICTIONS.inc()   
+            HIGH_RISK_PREDICTIONS.inc()
 
     except Exception as e:
         logger.error(f"Prediction inference error: {e}")
@@ -283,7 +277,7 @@ def predict(tel: Telemetry):
     except Exception as e:
         # We log the error but don't fail the request (Best Practice)
         logger.error(f"S3 Logging failed: {e}")
-        S3_LOG_FAILURES.inc()                         # NEW
+        S3_LOG_FAILURES.inc()  # NEW
 
     return {"failure_risk": proba, "label": label, "version": model_state["version"]}
 

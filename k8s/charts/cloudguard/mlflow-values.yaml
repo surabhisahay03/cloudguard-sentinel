@@ -84,8 +84,5 @@ readinessProbe:
 livenessProbe:
   initialDelaySeconds: 300
 
-ingress:
-  enabled: false
-
 serviceMonitor:
   enabled: false

@@ -19,7 +19,7 @@ spec:
           prometheusSpec:
             serviceMonitorSelectorNilUsesHelmValues: false
             serviceMonitorSelector: {}
-            serviceMonitorNamespaceSelector: {}  
+            serviceMonitorNamespaceSelector: {}
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

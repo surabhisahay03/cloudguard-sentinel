@@ -88,7 +88,7 @@ module "eks" {
   # --- Grant the IAM user cluster-admin automatically ---
   access_entries = {
     admin = {
-      principal_arn = var.cluster_admin_arn 
+      principal_arn = var.cluster_admin_arn
       policy_associations = {
         admin = {
           # This ARN is a fixed AWS policy, so it's fine to leave hardcoded
@@ -101,7 +101,7 @@ module "eks" {
 
   eks_managed_node_groups = {
     default = {
-      instance_types = [var.eks_node_instance_type] 
+      instance_types = [var.eks_node_instance_type]
 
       capacity_type = var.eks_node_capacity_type
 

@@ -36,7 +36,7 @@ flowchart TB
     end
 
     Push --> GHA --> GHCR --> ArgoCD --> EKS
-    
+
     Training -->|"Train & Log"| MLflow
     MLflow <--> S3
     MLflow <--> PG
