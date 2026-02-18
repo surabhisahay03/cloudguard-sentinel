@@ -12,9 +12,8 @@ import mlflow
 import mlflow.sklearn
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from prometheus_client import Counter, Gauge
-from prometheus_fastapi_instrumentator import Instrumentator
 from prometheus_client import Counter, Gauge, Histogram
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 
 # --- CONFIGURATION ---
@@ -250,7 +249,7 @@ def predict(tel: Telemetry):
         PREDICTIONS_TOTAL.inc()
         LAST_FAILURE_RISK.set(proba)
         
-        PREDICTION_CONFIDENCE.observe(proba)          # NEW
+        PREDICTION_CONFIDENCE.observe(proba)  # NEW: Track confidence distribution
         if proba >= 0.5:
             HIGH_RISK_PREDICTIONS.inc()   
 
