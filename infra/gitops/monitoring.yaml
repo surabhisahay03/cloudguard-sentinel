@@ -15,6 +15,11 @@ spec:
       values: |
         grafana:
           adminPassword: "admin"
+        prometheus:
+          prometheusSpec:
+            serviceMonitorSelectorNilUsesHelmValues: false
+            serviceMonitorSelector: {}
+            serviceMonitorNamespaceSelector: {}  
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

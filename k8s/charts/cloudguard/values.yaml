@@ -64,4 +64,4 @@ livenessProbe:
   initialDelaySeconds: 180
 
 serviceMonitor:
-  enabled: false
+  enabled: true
