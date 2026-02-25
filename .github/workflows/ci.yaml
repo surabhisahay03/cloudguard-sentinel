@@ -3,108 +3,124 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
-permissions:
-  contents: read
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/cloudguard-sentinel
 
 jobs:
-  # Lint job
-  lint:
-    name: Lint Code with Flake8
+  ci:
+    name: Build, Scan & Push
     runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8
-
-      - name: Run lint check
-        run: |
-          echo "Running flake8 linting..."
-          flake8 . --max-line-length=100 --exclude=venv,__pycache__,.git,.github
-
-  # Unit tests
-  test:
-    name: Run Unit Tests
-    runs-on: ubuntu-latest
-    needs: lint  # Only run if lint passes
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Cache pip dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r app/requirements.txt pytest
-
-      # - name: Run unit tests
-      #   run:  |
-      #     export PYTHONPATH=$PYTHONPATH:$(pwd)
-      #     pytest --maxfail=1 --disable-warnings -q
-
-  build_and_push:
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
-      packages: write
+      packages: write        # needed to push to GHCR
+      id-token: write        # needed for cosign OIDC signing
+
     steps:
-      - name: Checkout
+      # ── 1. Checkout ────────────────────────────────────────────────
+      - name: Checkout code
         uses: actions/checkout@v4
 
+      # ── 2. Lint ────────────────────────────────────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install flake8 pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Lint with Flake8
+        run: flake8 . --config=.flake8
+
+      # - name: Run unit tests
+      #   run: pytest tests/ -v
+
+      # ── 3. Build Image ─────────────────────────────────────────────
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags and labels)
+      - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/surabhisahay03/cloudguard-sentinel
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,format=long
-            type=raw,value=latest
+            type=sha,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+      - name: Build Docker image (local, not pushed yet)
+        uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
-          platforms: linux/amd64
+          push: false
+          load: true                        # load into local Docker daemon for scanning
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # ── 4. Trivy Scan ──────────────────────────────────────────────
+      # Scans BEFORE pushing — vulnerable images never reach the registry
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          format: table
+          exit-code: "1"                    # fail pipeline on CRITICAL only
+          severity: CRITICAL                # HIGH and below → report but continue
+          ignore-unfixed: true              # skip vulns with no fix available yet
+
+      # ── 5. Generate SBOM ───────────────────────────────────────────
+      # Software Bill of Materials — lists every dependency inside the image
+      # Demonstrates software supply chain security best practices
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          artifact-name: sbom.spdx.json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+
+      # ── 6. Push Image ──────────────────────────────────────────────
+      # Only push if scan passed
+      - name: Push image to GHCR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── 7. Sign Image with Cosign ──────────────────────────────────
+      # Keyless signing via OIDC — no keys stored anywhere
+      # Proves the image came from THIS pipeline and was not tampered with
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image with Cosign (keyless OIDC)
+        run: |
+          cosign sign --yes \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.meta.outputs.digest }}
+        env:
+          COSIGN_EXPERIMENTAL: "true"
