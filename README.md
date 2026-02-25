@@ -9,40 +9,48 @@ Unlike typical "notebook" projects, this is a **production-grade platform** buil
 ## 🏗️ High-Level Architecture
 
 ```mermaid
-flowchart TB
-    subgraph Dev["👩‍💻 Developer"]
+flowchart TD
+    subgraph Dev["👩‍💻 Developer Workstation"]
         Push["git push"]
     end
 
-    subgraph CI["⚙️ CI/CD"]
-        GHA["GitHub Actions<br/>Build & Test"]
-        GHCR["📦 Container<br/>Registry"]
+    subgraph CI["⚙️ CI Pipeline — GitHub Actions"]
+        Lint["Lint + Unit Tests"]
+        Scan["Trivy Security Scan"]
+        Build["Build & Push Docker Image"]
     end
 
-    subgraph GitOps["🔄 GitOps"]
-        ArgoCD["Argo CD<br/>Auto-Sync"]
+    subgraph Feeders["CD Layer"]
+        GHCR["📦 GHCR<br/>Container Registry"]
+        TF["🏗️ Terraform<br/>Provisions EKS, VPC, IAM, S3"]
+        Argo["🔄 ArgoCD<br/>Syncs K8s Manifests from Git"]
     end
 
     subgraph EKS["☸️ AWS EKS Cluster"]
-        API["🚀 FastAPI<br/>Inference API"]
-        MLflow["📊 MLflow<br/>Model Registry"]
-        Training["⚡ Argo Workflows<br/>ML Training"]
-        Monitor["📈 Prometheus<br/>+ Grafana"]
-    end
-
-    subgraph Storage["💾 Storage"]
-        S3[("🪣 S3<br/>Models & Logs")]
+        Monitor["📈 Prometheus + Grafana"]
+        API["🚀 FastAPI Inference API"]
+        Training["⚡ Argo Workflows ML Training"]
+        MLflow["📊 MLflow Model Registry"]
         PG[("🐘 PostgreSQL<br/>Metadata")]
     end
 
-    Push --> GHA --> GHCR --> ArgoCD --> EKS
+    subgraph Storage["💾 AWS Storage"]
+        S3[("S3 Models & Logs")]
+        PG[("PostgreSQL Metadata")]
+    end
 
-    Training -->|"Train & Log"| MLflow
-    MLflow <--> S3
-    MLflow <--> PG
-    API <-->|"Load @production"| MLflow
-    API -->|"Predictions"| S3
-    Monitor -.->|"Metrics"| API
+    Push --> Lint --> Scan --> Build --> GHCR
+
+    GHCR -->|"Pulls image"| EKS
+    TF -->|"Provisions"| EKS
+    Argo -->|"Syncs manifests"| EKS
+
+    Monitor -.->|"Scrapes metrics"| API
+    Training -->|"Logs experiments"| MLflow
+    API -->|"Polls every 5 min"| MLflow
+    API -->|"Prediction logs"| S3
+    MLflow --> S3
+    MLflow --> PG
 ```
 
 ### The "Senior" Stack
