@@ -61,7 +61,7 @@ flowchart TD
 | **Orchestration** | **Argo Workflows** | Scalable, container-native training pipelines (not just cron jobs). |
 | **Model Registry** | **MLflow** | Centralized tracking for experiments and model versioning. |
 | **Serving** | **FastAPI + Polling** | Zero-downtime model updates without restarting pods. |
-| **Observability** | **Prometheus** | (Planned) Metrics exposed at `/metrics` for latency and drift monitoring. |
+| **Observability** | **Prometheus** | Custom ML metrics exposed at `/metrics` for inference latency and prediction drift monitoring. |
 
 ---
 
