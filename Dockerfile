@@ -23,9 +23,6 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN adduser --disabled-password --gecos "" appuser
-USER appuser
-
 # Copy wheels and install only necessary packages
 COPY --from=builder /app/wheels /wheels
 RUN pip install --no-cache /wheels/*
@@ -35,6 +32,14 @@ COPY app /app
 
 # Copy the trained model and feature list into the image
 COPY ml/models /ml/models
+
+# THEN create non-root user and switch to it
+# Everything above runs as root (needed for pip install)
+# Everything below runs as appuser (security best practice)
+RUN adduser --disabled-password --gecos "" appuser \
+    && chown -R appuser:appuser /app /ml
+
+USER appuser
 
 # Expose port
 EXPOSE 8000
