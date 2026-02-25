@@ -103,6 +103,7 @@ jobs:
       # ── 6. Push Image ──────────────────────────────────────────────
       # Only push if scan passed
       - name: Push image to GHCR
+        id: push
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -121,6 +122,6 @@ jobs:
       - name: Sign image with Cosign (keyless OIDC)
         run: |
           cosign sign --yes \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.meta.outputs.digest }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
         env:
           COSIGN_EXPERIMENTAL: "true"
