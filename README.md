@@ -36,7 +36,6 @@ flowchart TD
 
     subgraph Storage["💾 AWS Storage"]
         S3[("S3 Models & Logs")]
-        PG[("PostgreSQL Metadata")]
     end
 
     Push --> Lint --> Scan --> Build --> GHCR
