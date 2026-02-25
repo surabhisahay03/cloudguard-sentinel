@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/surabhisahay03/cloudguard-sentinel
-  tag: sha-c921584
+  tag: sha-5e8d5c4
   pullPolicy: Always
 
 service:
