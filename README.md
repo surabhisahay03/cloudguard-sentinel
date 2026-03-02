@@ -15,13 +15,17 @@ flowchart TD
     end
 
     subgraph CI["⚙️ CI Pipeline — GitHub Actions"]
-        Lint["Lint + Unit Tests"]
-        Scan["Trivy Security Scan"]
-        Build["Build & Push Docker Image"]
+        Lint["🔍 Lint (Flake8)"]
+        Build["🔨 Build Image (local, not pushed)"]
+        Scan["🛡️ Trivy Security Scan (CRITICAL only)"]
+        SBOM["📋 Generate SBOM (Syft)"]
+        Push2["📤 Push to GHCR (SHA tagged)"]
+        Sign["✍️ Sign Image (Cosign keyless OIDC)"]
+        GitTag["📝 Update Helm values.yaml (new SHA tag)"]
     end
 
     subgraph Feeders["CD Layer"]
-        GHCR["📦 GHCR<br/>Container Registry"]
+        GHCR["📦 GHCR<br/>Image + Signature stored here"]
         TF["🏗️ Terraform<br/>Provisions EKS, VPC, IAM, S3"]
         Argo["🔄 ArgoCD<br/>Syncs K8s Manifests from Git"]
     end
@@ -31,14 +35,17 @@ flowchart TD
         API["🚀 FastAPI Inference API"]
         Training["⚡ Argo Workflows ML Training"]
         MLflow["📊 MLflow Model Registry"]
-        PG[("🐘 PostgreSQL<br/>Metadata")]
+        PG[("🐘 PostgreSQL Metadata")]
     end
 
     subgraph Storage["💾 AWS Storage"]
         S3[("S3 Models & Logs")]
     end
 
-    Push --> Lint --> Scan --> Build --> GHCR
+    Push --> Lint --> Build --> Scan --> SBOM --> Push2 --> Sign
+    Sign -->|"stores image + signature"| GHCR
+    Sign --> GitTag
+    GitTag -->|"ArgoCD detects change"| Argo
 
     GHCR -->|"Pulls image"| EKS
     TF -->|"Provisions"| EKS
@@ -48,8 +55,8 @@ flowchart TD
     Training -->|"Logs experiments"| MLflow
     API -->|"Polls every 5 min"| MLflow
     API -->|"Prediction logs"| S3
-    MLflow --> S3
-    MLflow --> PG
+    MLflow -->|"stores model artifacts"| S3
+    MLflow -->|"stores metadata"| PG
 ```
 
 ### The "Senior" Stack
