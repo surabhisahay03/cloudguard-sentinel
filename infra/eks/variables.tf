@@ -49,7 +49,7 @@ variable "eks_node_instance_type" {
   description = "The EC2 instance type for the EKS nodes."
   type        = string
   # default     = "t3a.medium" # <-- The default value
-  default     = "t3.large"
+  default     = "t3a.large"
 }
 
 variable "eks_node_min_size" {
